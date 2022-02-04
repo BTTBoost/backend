@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func HoldersHandler(w http.ResponseWriter, r *http.Request) {
+func UsersHandler(w http.ResponseWriter, r *http.Request) {
 	// tokens arg
 	tokens := strings.Split(r.URL.Query().Get("tokens"), ",")
 	if len(tokens) == 0 || !lib.IsValidAddressSlice(tokens) {
