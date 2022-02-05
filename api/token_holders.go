@@ -1,4 +1,4 @@
-package api
+package handler
 
 import (
 	"awake/internal/lib"

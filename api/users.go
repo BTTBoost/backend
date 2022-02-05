@@ -1,15 +1,15 @@
-package api
+package handler
 
 import (
 	"awake/internal/lib"
+	"bufio"
 	"encoding/json"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
 )
 
-func UsersHandler(w http.ResponseWriter, r *http.Request) {
+func QueryHandler(w http.ResponseWriter, r *http.Request) {
 	// tokens arg
 	tokens := strings.Split(r.URL.Query().Get("tokens"), ",")
 	if len(tokens) == 0 || !lib.IsValidAddressSlice(tokens) {
@@ -33,31 +33,35 @@ func UsersHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// connect db
-	db, err := lib.CreateDB()
+	var from int64 = 1636156800
+
+	// generate sql query
+	query := lib.TokenHoldersQuery(1, tokens[0], from, amounts[0])
+	for i := 1; i < len(tokens); i++ {
+		qi := lib.TokenHoldersQuery(1, tokens[i], from, amounts[i])
+		query = lib.JoinHolderQueries(query, qi)
+	}
+	query = lib.GroupHolderQuery(query)
+
+	// query Clickhouse over HTTP
+	result, err := lib.QueryClickhouse(query)
 	if err != nil {
-		log.Printf("failed to connect to db: %v", err)
-		lib.WriteErrorResponse(w, http.StatusBadRequest, "db error")
+		// log.Printf("failed to query clickhouse: %v", err)
+		lib.WriteErrorResponse(w, http.StatusBadRequest, "internal error")
 		return
 	}
-	defer db.Close()
 
-	// // read holder count from db
-	// from := time.Now().Truncate(time.Hour * 24).Add(-24 * time.Hour * time.Duration(days-1)).Unix()
-	// log.Printf("query args: days = %v, from = %v", days, from)
-	// entries, err := db.GetDailyGroupTokenHolders(tokens, from)
-	// if err != nil {
-	// 	log.Printf("failed to count token holders: %v", err)
-	// 	lib.WriteErrorResponse(w, http.StatusBadRequest, "db error")
-	// 	return
-	// }
+	// parse response
+	entries := []Entry{}
+	scanner := bufio.NewScanner(strings.NewReader(result))
+	for scanner.Scan() {
+		ss := strings.Split(scanner.Text(), "	")
+		entries = append(entries, Entry{Time: ss[0], Amount: ss[1]})
+	}
 
-	// // write response
-	// w.Header().Set("Content-Type", "application/json")
-	// json.NewEncoder(w).Encode(entries)
-
-	// write empty response
+	// write response
 	w.Header().Set("Content-Type", "application/json")
-	resp := lib.SuccessResponse{Success: true}
-	json.NewEncoder(w).Encode(resp)
+	json.NewEncoder(w).Encode(entries)
+
+	lib.WriteErrorResponse(w, http.StatusBadRequest, "not implemented")
 }
