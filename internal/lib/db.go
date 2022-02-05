@@ -121,7 +121,7 @@ func (db *DB) GetDailyTokenHolders(network int, token string, fromTime int64) (m
 	return m, nil
 }
 
-func (db *DB) SaveOpenseaTrades(events []OpenseaTradeEvent) error {
+func (db *DB) SaveOpenseaTrades(events []CovalentEvent) error {
 	batch := &pgx.Batch{}
 
 	for _, e := range events {
@@ -133,6 +133,30 @@ func (db *DB) SaveOpenseaTrades(events []OpenseaTradeEvent) error {
 		batch.Queue(
 			"INSERT INTO opensea_trades(block, time, tx, maker, taker, price) VALUES ($1, $2, $3, $4, $5, $6)",
 			t.block, t.time, t.tx, t.maker, t.taker, t.price,
+		)
+	}
+
+	br := db.conn.SendBatch(context.Background(), batch)
+	err := br.Close()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (db *DB) SaveAaveDeposits(events []CovalentEvent) error {
+	batch := &pgx.Batch{}
+
+	for _, e := range events {
+		d, err := ParseAaveDepositEvent(e)
+		if err != nil {
+			return err
+		}
+
+		batch.Queue(
+			"INSERT INTO aave_deposits(block, time, tx, \"user\", on_behalf_of, reserve, amount) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+			d.block, d.time, d.tx, d.user, d.onBehalfOf, d.reserve, d.amount,
 		)
 	}
 
