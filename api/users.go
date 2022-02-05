@@ -57,7 +57,17 @@ func QueryHandler(w http.ResponseWriter, r *http.Request) {
 	scanner := bufio.NewScanner(strings.NewReader(result))
 	for scanner.Scan() {
 		ss := strings.Split(scanner.Text(), "	")
-		entries = append(entries, Entry{Time: ss[0], Amount: ss[1]})
+		time, err := strconv.ParseInt(ss[0], 10, 64)
+		if err != nil {
+			lib.WriteErrorResponse(w, http.StatusBadRequest, "internal error")
+			return
+		}
+		amount, err := strconv.ParseInt(ss[1], 10, 64)
+		if err != nil {
+			lib.WriteErrorResponse(w, http.StatusBadRequest, "internal error")
+			return
+		}
+		entries = append(entries, Entry{Time: time, Amount: amount})
 	}
 
 	// write response
