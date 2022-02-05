@@ -120,3 +120,27 @@ func (db *DB) GetDailyTokenHolders(network int, token string, fromTime int64) (m
 
 	return m, nil
 }
+
+func (db *DB) SaveOpenseaTrades(events []OpenseaTradeEvent) error {
+	batch := &pgx.Batch{}
+
+	for _, e := range events {
+		t, err := OpenseaEventToTrade(e)
+		if err != nil {
+			return err
+		}
+
+		batch.Queue(
+			"INSERT INTO opensea_trades(block, time, tx, maker, taker, price) VALUES ($1, $2, $3, $4, $5, $6)",
+			t.block, t.time, t.tx, t.maker, t.taker, t.price,
+		)
+	}
+
+	br := db.conn.SendBatch(context.Background(), batch)
+	err := br.Close()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
