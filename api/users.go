@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func QueryHandler(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +34,7 @@ func QueryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var from int64 = 1636156800
+	from := time.Now().Truncate(time.Hour * 24).Add(-24 * time.Hour * time.Duration(days-1)).Unix()
 
 	// generate sql query
 	query := lib.TokenHoldersQuery(1, tokens[0], from, amounts[0])
@@ -62,6 +63,4 @@ func QueryHandler(w http.ResponseWriter, r *http.Request) {
 	// write response
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(entries)
-
-	lib.WriteErrorResponse(w, http.StatusBadRequest, "not implemented")
 }
