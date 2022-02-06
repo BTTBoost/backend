@@ -5,11 +5,12 @@ import (
 	"math/big"
 )
 
-func TokenHoldersQuery(network int, token string, from int64, amount *big.Int) string {
+func TokenHoldersQuery(network int, token string, from int64, days int64, amount *big.Int) string {
+	to := 1636156800 + days*86400
 	return fmt.Sprintf("SELECT time, holder "+
 		"FROM analytics.token_holders "+
-		"WHERE network = %v AND token = '%v' AND time >= %v AND amount >= %v",
-		network, token, from, amount,
+		"WHERE network = %v AND token = '%v' AND time >= %v AND time < %v AND amount >= %v",
+		network, token, from, to, amount,
 	)
 }
 
@@ -22,13 +23,14 @@ func JoinHolderQueries(query0 string, query1 string) string {
 	)
 }
 
-func GroupHolderQuery(query string) string {
+func GroupHolderQuery(query string, from int64, days int64) string {
+	to := 1636156800 + days*86400
 	return fmt.Sprintf(
 		"SELECT time, COUNT(*) "+
 			"FROM (%v) "+
 			"GROUP BY time "+
-			"ORDER BY time ASC",
-		query,
+			"ORDER BY time ASC WITH FILL FROM %v TO %v STEP 86400",
+		query, from, to,
 	)
 }
 

@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 )
 
 func QueryHandler(w http.ResponseWriter, r *http.Request) {
@@ -27,22 +26,24 @@ func QueryHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// days arg
-	daysQuery := r.URL.Query().Get("days")
-	days, err := strconv.ParseInt(daysQuery, 10, 32)
-	if err != nil || days <= 0 || days > 365 {
-		lib.WriteErrorResponse(w, http.StatusBadRequest, "invalid days param")
-		return
-	}
+	// daysQuery := r.URL.Query().Get("days")
+	// days, err := strconv.ParseInt(daysQuery, 10, 32)
+	// if err != nil || days <= 0 || days > 365 {
+	// 	lib.WriteErrorResponse(w, http.StatusBadRequest, "invalid days param")
+	// 	return
+	// }
+	// from := time.Now().Truncate(time.Hour * 24).Add(-24 * time.Hour * time.Duration(days-1)).Unix()
 
-	from := time.Now().Truncate(time.Hour * 24).Add(-24 * time.Hour * time.Duration(days-1)).Unix()
+	var days int64 = 90
+	var from int64 = 1636156800
 
 	// generate sql query
-	query := lib.TokenHoldersQuery(1, tokens[0], from, amounts[0])
+	query := lib.TokenHoldersQuery(1, tokens[0], from, days, amounts[0])
 	for i := 1; i < len(tokens); i++ {
-		qi := lib.TokenHoldersQuery(1, tokens[i], from, amounts[i])
+		qi := lib.TokenHoldersQuery(1, tokens[i], from, days, amounts[i])
 		query = lib.JoinHolderQueries(query, qi)
 	}
-	query = lib.GroupHolderQuery(query)
+	query = lib.GroupHolderQuery(query, from, days)
 
 	// query Clickhouse over HTTP
 	result, err := lib.QueryClickhouse(query)

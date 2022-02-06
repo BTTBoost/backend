@@ -32,27 +32,28 @@ func main() {
 	// log.Printf("GROUP(T0): %v", groupt0)
 	// log.Printf("GROUP((T0xT1)xT2): %v", groupt0xt1xt2)
 
-	// // params
-	// var from int64 = 1636156800
-	// tokens := []string{"0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d", "0x026224a2940bfe258d0dbe947919b62fe321f042"}
-	// amounts := []*big.Int{big.NewInt(1), big.NewInt(1)}
-
-	// // generate sql query
-	// query := lib.TokenHoldersQuery(1, tokens[0], from, amounts[0])
-	// for i := 1; i < len(tokens); i++ {
-	// 	qi := lib.TokenHoldersQuery(1, tokens[i], from, amounts[i])
-	// 	query = lib.JoinHolderQueries(query, qi)
-	// }
-	// query = lib.GroupHolderQuery(query)
-	// log.Printf("query: %v", query)
-
+	// params
 	var from int64 = 1636156800
 	var days int64 = 90
-	holdersQuery := lib.TokenHoldersQuery(1, "0x5a98fcbea516cf06857215779fd812ca3bef1b32", from, big.NewInt(1))
-	eventsQuery := lib.EventQuery("aave_deposits", from, days)
-	holderDailyEventsQuery := lib.HolderDailyEventsQuery(holdersQuery, eventsQuery, from, days)
+	tokens := []string{"0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d", "0x026224a2940bfe258d0dbe947919b62fe321f042"}
+	amounts := []*big.Int{big.NewInt(10), big.NewInt(1)}
 
-	log.Printf("holders query: %v", holdersQuery)
-	log.Printf("events query: %v", eventsQuery)
-	log.Printf("holder daily events query: %v", holderDailyEventsQuery)
+	// generate sql query
+	query := lib.TokenHoldersQuery(1, tokens[0], from, days, amounts[0])
+	for i := 1; i < len(tokens); i++ {
+		qi := lib.TokenHoldersQuery(1, tokens[i], from, days, amounts[i])
+		query = lib.JoinHolderQueries(query, qi)
+	}
+	query = lib.GroupHolderQuery(query, from, days)
+	log.Printf("query: %v", query)
+
+	// var from int64 = 1636156800
+	// var days int64 = 90
+	// holdersQuery := lib.TokenHoldersQuery(1, "0x5a98fcbea516cf06857215779fd812ca3bef1b32", from, days, big.NewInt(1))
+	// eventsQuery := lib.EventQuery("aave_deposits", from, days)
+	// holderDailyEventsQuery := lib.HolderDailyEventsQuery(holdersQuery, eventsQuery, from, days)
+
+	// log.Printf("holders query: %v", holdersQuery)
+	// log.Printf("events query: %v", eventsQuery)
+	// log.Printf("holder daily events query: %v", holderDailyEventsQuery)
 }
