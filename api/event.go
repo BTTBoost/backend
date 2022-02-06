@@ -14,7 +14,7 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 	networksQuery := strings.Split(r.URL.Query().Get("networks"), ",")
 	networks, err := lib.ParseInt64Slice(networksQuery)
 	if len(networks) == 0 || err != nil {
-		lib.WriteErrorResponse(w, http.StatusBadRequest, "invalid network param")
+		lib.WriteErrorResponse(w, http.StatusBadRequest, "invalid networks param")
 		return
 	}
 
@@ -35,7 +35,11 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 
 	// event arg
 	event := r.URL.Query().Get("event")
-	if event == "" || event != "aave_deposit_ethereum" {
+	eventTable := ""
+	switch event {
+	case "aave_deposit_ethereum":
+		eventTable = "aave_deposits"
+	default:
 		lib.WriteErrorResponse(w, http.StatusBadRequest, "invalid event")
 		return
 	}
@@ -50,7 +54,7 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 		qi := lib.TokenHoldersQuery(int(networks[i]), tokens[i], from, days, amounts[i])
 		holdersQuery = lib.JoinHolderQueries(holdersQuery, qi)
 	}
-	eventQuery := lib.EventQuery(event, from, days)
+	eventQuery := lib.EventQuery(eventTable, from, days)
 	query := lib.HolderDailyEventsQuery(holdersQuery, eventQuery, from, days)
 
 	// query Clickhouse over HTTP

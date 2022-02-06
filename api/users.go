@@ -14,7 +14,7 @@ func UsersHandler(w http.ResponseWriter, r *http.Request) {
 	networksQuery := strings.Split(r.URL.Query().Get("networks"), ",")
 	networks, err := lib.ParseInt64Slice(networksQuery)
 	if len(networks) == 0 || err != nil {
-		lib.WriteErrorResponse(w, http.StatusBadRequest, "invalid network param")
+		lib.WriteErrorResponse(w, http.StatusBadRequest, "invalid networks param")
 		return
 	}
 
