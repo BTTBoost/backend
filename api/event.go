@@ -54,7 +54,7 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 		eventQuery = lib.EventQuery("aave_deposits", 1, from, days)
 	case "aave_deposit_polygon":
 		eventQuery = lib.EventQuery("aave_deposits", 137, from, days)
-	case "looks_rare_ethereum":
+	case "looksrare_trade_ethereum":
 		// TODO: currently ignores takers (!)
 		eventQuery = lib.LooksRareTradesQuery(1, from, days)
 	default:
