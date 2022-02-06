@@ -9,10 +9,18 @@ import (
 	"strings"
 )
 
-func QueryHandler(w http.ResponseWriter, r *http.Request) {
+func UsersHandler(w http.ResponseWriter, r *http.Request) {
+	// networks arg
+	networksQuery := strings.Split(r.URL.Query().Get("network"), ",")
+	networks, err := lib.ParseInt64Slice(networksQuery)
+	if len(networks) == 0 || err != nil {
+		lib.WriteErrorResponse(w, http.StatusBadRequest, "invalid network param")
+		return
+	}
+
 	// tokens arg
 	tokens := strings.Split(r.URL.Query().Get("tokens"), ",")
-	if len(tokens) == 0 || !lib.IsValidAddressSlice(tokens) {
+	if !lib.IsValidAddressSlice(tokens) || len(tokens) != len(networks) {
 		lib.WriteErrorResponse(w, http.StatusBadRequest, "invalid tokens param")
 		return
 	}
@@ -38,9 +46,9 @@ func QueryHandler(w http.ResponseWriter, r *http.Request) {
 	var from int64 = 1636156800
 
 	// generate sql query
-	query := lib.TokenHoldersQuery(1, tokens[0], from, days, amounts[0])
+	query := lib.TokenHoldersQuery(int(networks[0]), tokens[0], from, days, amounts[0])
 	for i := 1; i < len(tokens); i++ {
-		qi := lib.TokenHoldersQuery(1, tokens[i], from, days, amounts[i])
+		qi := lib.TokenHoldersQuery(int(networks[i]), tokens[i], from, days, amounts[i])
 		query = lib.JoinHolderQueries(query, qi)
 	}
 	query = lib.GroupHolderQuery(query, from, days)

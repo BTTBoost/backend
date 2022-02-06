@@ -36,6 +36,18 @@ func IsValidAddressSlice(addresses []string) bool {
 	return true
 }
 
+func ParseInt64Slice(slice []string) ([]int64, error) {
+	arr := make([]int64, len(slice))
+	for i, s := range slice {
+		x, err := strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		arr[i] = x
+	}
+	return arr, nil
+}
+
 func ParseTokenAmountSlice(amounts []string) ([]*big.Int, bool) {
 	as := make([]*big.Int, len(amounts))
 	for i, amount := range amounts {
