@@ -15,6 +15,35 @@ type AaveDeposit struct {
 	amount     string
 }
 
+func ParseAaveDepositBitqueryEvent(event BitqueryEvent) (*AaveDeposit, error) {
+	var user string
+	var onBehalfOf string
+	var reserve string
+	var amount string
+	for _, a := range event.Arguments {
+		switch a.Name {
+		case "user":
+			user = a.Value
+		case "onBehalfOf":
+			onBehalfOf = a.Value
+		case "reserve":
+			reserve = a.Value
+		case "amount":
+			amount = a.Value
+		}
+	}
+
+	return &AaveDeposit{
+		event.BlockData.Block,
+		event.BlockData.TimeData.Timestamp,
+		event.Tx.Hash,
+		user,
+		onBehalfOf,
+		reserve,
+		amount,
+	}, nil
+}
+
 func ParseAaveDepositEvent(event CovalentEvent) (*AaveDeposit, error) {
 	time, err := time.Parse(EVENT_TIME_LAYOUT, event.BlockSignedAt)
 	if err != nil {

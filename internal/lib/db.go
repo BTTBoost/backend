@@ -145,18 +145,18 @@ func (db *DB) SaveOpenseaTrades(events []CovalentEvent) error {
 	return nil
 }
 
-func (db *DB) SaveAaveDeposits(events []CovalentEvent) error {
+func (db *DB) SaveAaveDeposits(network int64, events []BitqueryEvent) error {
 	batch := &pgx.Batch{}
 
 	for _, e := range events {
-		d, err := ParseAaveDepositEvent(e)
+		d, err := ParseAaveDepositBitqueryEvent(e)
 		if err != nil {
 			return err
 		}
 
 		batch.Queue(
-			"INSERT INTO aave_deposits(block, time, tx, \"user\", on_behalf_of, reserve, amount) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-			d.block, d.time, d.tx, d.user, d.onBehalfOf, d.reserve, d.amount,
+			"INSERT INTO aave_deposits(network, block, time, tx, \"user\", on_behalf_of, reserve, amount) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+			network, d.block, d.time, d.tx, d.user, d.onBehalfOf, d.reserve, d.amount,
 		)
 	}
 
