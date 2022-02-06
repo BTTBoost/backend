@@ -10,6 +10,10 @@ import (
 )
 
 func EventHandler(w http.ResponseWriter, r *http.Request) {
+	// fixed time range
+	var days int64 = 90
+	var from int64 = 1636156800
+
 	// networks arg
 	networksQuery := strings.Split(r.URL.Query().Get("networks"), ",")
 	networks, err := lib.ParseInt64Slice(networksQuery)
@@ -35,23 +39,6 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 
 	// event arg
 	event := r.URL.Query().Get("event")
-	eventTable := ""
-	var eventNetwork int64
-	switch event {
-	case "aave_deposit_ethereum":
-		eventTable = "aave_deposits"
-		eventNetwork = 1
-	case "aave_deposit_polygon":
-		eventTable = "aave_deposits"
-		eventNetwork = 137
-	default:
-		lib.WriteErrorResponse(w, http.StatusBadRequest, "invalid event")
-		return
-	}
-
-	// fixed time range
-	var days int64 = 90
-	var from int64 = 1636156800
 
 	// generate sql query
 	holdersQuery := lib.TokenHoldersQuery(int(networks[0]), tokens[0], from, days, amounts[0])
@@ -59,7 +46,22 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 		qi := lib.TokenHoldersQuery(int(networks[i]), tokens[i], from, days, amounts[i])
 		holdersQuery = lib.JoinHolderQueries(holdersQuery, qi)
 	}
-	eventQuery := lib.EventQuery(eventTable, eventNetwork, from, days)
+
+	// event query
+	eventQuery := ""
+	switch event {
+	case "aave_deposit_ethereum":
+		eventQuery = lib.EventQuery("aave_deposits", 1, from, days)
+	case "aave_deposit_polygon":
+		eventQuery = lib.EventQuery("aave_deposits", 137, from, days)
+	case "looks_rare_ethereum":
+		// TODO: currently ignores takers (!)
+		eventQuery = lib.LooksRareTradesQuery(1, from, days)
+	default:
+		lib.WriteErrorResponse(w, http.StatusBadRequest, "invalid event")
+		return
+	}
+
 	query := lib.HolderDailyEventsQuery(holdersQuery, eventQuery, from, days)
 
 	// query Clickhouse over HTTP
