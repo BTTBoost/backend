@@ -31,3 +31,27 @@ func GroupHolderQuery(query string) string {
 		query,
 	)
 }
+
+func EventQuery(event string, from int64, days int64) string {
+	to := 1636156800 + days*86400
+	return fmt.Sprintf(
+		"SELECT time_day as time, user, amount "+
+			"FROM analytics.%v "+
+			"WHERE time >= %v AND time < %v "+
+			"ORDER BY toUnixTimestamp(toStartOfDay(toDate(time))) as time_day",
+		event, from, to,
+	)
+}
+
+func HolderDailyEventsQuery(holdersQuery string, eventQuery string, from int64, days int64) string {
+	to := 1636156800 + days*86400
+	return fmt.Sprintf(
+		"SELECT H.time, COUNT(*) "+
+			"FROM (%v) H "+
+			"INNER JOIN (%v) E "+
+			"ON H.time = E.time AND H.holder = E.user "+
+			"GROUP BY H.time "+
+			"ORDER BY H.time WITH FILL FROM %v TO %v STEP 86400",
+		holdersQuery, eventQuery, from, to,
+	)
+}
