@@ -12,8 +12,8 @@ import (
 )
 
 type Entry struct {
-	Time   int64 `json:"time"`
-	Amount int64 `json:"amount"`
+	Time  int64 `json:"time"`
+	Value int64 `json:"value"`
 }
 
 func TokenHoldersHandler(w http.ResponseWriter, r *http.Request) {
@@ -73,12 +73,12 @@ func TokenHoldersHandler(w http.ResponseWriter, r *http.Request) {
 			lib.WriteErrorResponse(w, http.StatusBadRequest, "internal error")
 			return
 		}
-		amount, err := strconv.ParseInt(ss[1], 10, 64)
+		value, err := strconv.ParseInt(ss[1], 10, 64)
 		if err != nil {
 			lib.WriteErrorResponse(w, http.StatusBadRequest, "internal error")
 			return
 		}
-		entries = append(entries, Entry{Time: time, Amount: amount})
+		entries = append(entries, Entry{Time: time, Value: value})
 	}
 
 	// write empty response
