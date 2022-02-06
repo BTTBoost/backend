@@ -56,8 +56,8 @@ func fetchEvents(page int64) ([]lib.BitqueryEvent, error) {
 		return nil, err
 	}
 
-	if result.Error {
-		return nil, errors.New(result.ErrorMessage)
+	if len(result.Errors) > 0 {
+		return nil, errors.New(result.Errors[0].Message)
 	}
 
 	return result.Data.Events, nil

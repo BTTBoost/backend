@@ -27,9 +27,8 @@ type BitqueryEventArgument struct {
 
 // response models
 type BitqueryResponse struct {
-	Data         BitqueryResponseData `json:"data"`
-	Error        bool                 `json:"error"`
-	ErrorMessage string               `json:"error_message"`
+	Data   BitqueryResponseData    `json:"data"`
+	Errors []BitqueryResponseError `json:"errors"`
 }
 
 type BitqueryResponseData struct {
@@ -38,4 +37,8 @@ type BitqueryResponseData struct {
 
 type BitqueryResponseDataEthereum struct {
 	Events []BitqueryEvent `json:"smartContractEvents"`
+}
+
+type BitqueryResponseError struct {
+	Message string `json:"message"`
 }
