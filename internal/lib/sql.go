@@ -34,14 +34,14 @@ func GroupHolderQuery(query string, from int64, days int64) string {
 	)
 }
 
-func EventQuery(event string, from int64, days int64) string {
+func EventQuery(event string, network int64, from int64, days int64) string {
 	to := 1636156800 + days*86400
 	return fmt.Sprintf(
 		"SELECT time_day as time, user, amount "+
 			"FROM analytics.%v "+
-			"WHERE time >= %v AND time < %v "+
+			"WHERE network = %v AND time >= %v AND time < %v "+
 			"ORDER BY toUnixTimestamp(toStartOfDay(toDate(time))) as time_day",
-		event, from, to,
+		event, network, from, to,
 	)
 }
 

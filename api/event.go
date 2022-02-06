@@ -36,9 +36,14 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 	// event arg
 	event := r.URL.Query().Get("event")
 	eventTable := ""
+	var eventNetwork int64
 	switch event {
 	case "aave_deposit_ethereum":
 		eventTable = "aave_deposits"
+		eventNetwork = 1
+	case "aave_deposit_polygon":
+		eventTable = "aave_deposits"
+		eventNetwork = 137
 	default:
 		lib.WriteErrorResponse(w, http.StatusBadRequest, "invalid event")
 		return
@@ -54,7 +59,7 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 		qi := lib.TokenHoldersQuery(int(networks[i]), tokens[i], from, days, amounts[i])
 		holdersQuery = lib.JoinHolderQueries(holdersQuery, qi)
 	}
-	eventQuery := lib.EventQuery(eventTable, from, days)
+	eventQuery := lib.EventQuery(eventTable, eventNetwork, from, days)
 	query := lib.HolderDailyEventsQuery(holdersQuery, eventQuery, from, days)
 
 	// query Clickhouse over HTTP
