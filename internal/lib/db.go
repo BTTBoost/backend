@@ -168,3 +168,27 @@ func (db *DB) SaveAaveDeposits(network int64, events []BitqueryEvent) error {
 
 	return nil
 }
+
+func (db *DB) SaveLooksRareTrades(network int64, events []BitqueryEvent) error {
+	batch := &pgx.Batch{}
+
+	for _, e := range events {
+		t, err := ParseLooksRareTradeBitqueryEvent(e)
+		if err != nil {
+			return err
+		}
+
+		batch.Queue(
+			"INSERT INTO looksrare_trades(network, block, time, tx, maker, taker, currency, price) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+			network, t.block, t.time, t.tx, t.maker, t.taker, t.currency, t.price,
+		)
+	}
+
+	br := db.conn.SendBatch(context.Background(), batch)
+	err := br.Close()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
