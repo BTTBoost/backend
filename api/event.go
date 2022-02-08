@@ -23,7 +23,8 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// tokens arg
-	tokens := strings.Split(r.URL.Query().Get("tokens"), ",")
+	tokensParam := strings.ToLower(r.URL.Query().Get("tokens"))
+	tokens := strings.Split(tokensParam, ",")
 	if !lib.IsValidAddressSlice(tokens) || len(tokens) != len(networks) {
 		lib.WriteErrorResponse(w, http.StatusBadRequest, "invalid tokens param")
 		return
@@ -73,7 +74,7 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// parse response
-	entries := []Entry{}
+	entries := []lib.ChartEntry{}
 	scanner := bufio.NewScanner(strings.NewReader(result))
 	for scanner.Scan() {
 		ss := strings.Split(scanner.Text(), "	")
@@ -87,7 +88,7 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 			lib.WriteErrorResponse(w, http.StatusBadRequest, "internal error")
 			return
 		}
-		entries = append(entries, Entry{Time: time, Value: value})
+		entries = append(entries, lib.ChartEntry{Time: time, Value: value})
 	}
 
 	// write response
