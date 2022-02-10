@@ -2,6 +2,7 @@ package main
 
 import (
 	"awake/internal/lib"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,49 +14,55 @@ import (
 	"github.com/joho/godotenv"
 )
 
-const OPENSEA_ADDRESS = "0x7be8076f4ea4a4ad08075c2508e481d6c946d12b"
-const TRADE_TOPIC = "0xc4109843e0b7d514e4c093114b863f8e7d8d9a458c372cd51bfe526b588006c9"
-const PAGE_SIZE = 25000
+const NETWORK = "ethereum"
+const CONTRACT_ADDRESS = "0x7be8076f4ea4a4ad08075c2508e481d6c946d12b"
+const EVENT = "OrdersMatched"
+const FROM_BLOCK = 13527859
+const TO_BLOCK = 14142694
+const PAGE_SIZE = 10000
 
-type Response struct {
-	Data         ResponseData `json:"data"`
-	Error        bool         `json:"error"`
-	ErrorMessage string       `json:"error_message"`
-}
-
-type ResponseData struct {
-	Items []lib.OpenseaTradeEvent `json:"items"`
-}
-
-func fetchTrades(fromBlock int64) ([]lib.OpenseaTradeEvent, error) {
-	apiKey := os.Getenv("COVALENT_API_KEY")
-	toBlock := fromBlock + 1000000 // max allowed
-
-	url := fmt.Sprintf(
-		"https://api.covalenthq.com/v1/1/events/topics/%v/"+
-			"?sender-address=%v&starting-block=%v&ending-block=%v&page-number=0&page-size=%v&key=%v",
-		TRADE_TOPIC, OPENSEA_ADDRESS, fromBlock, toBlock,
-		PAGE_SIZE, apiKey,
+func fetchEvents(page int64) ([]lib.BitqueryEvent, error) {
+	apiKey := os.Getenv("BITQUERY_API_KEY")
+	url := "https://graphql.bitquery.io/"
+	body := fmt.Sprintf(`{
+		"query":"query ($network: EthereumNetwork!,$contract: String!,$event: String!, $fromBlock: Int!, $toBlock: Int!, $limit: Int!, $offset: Int!) {\n  ethereum(network: $network) {\n    smartContractEvents(\n      options: {asc: \"block.height\", limit: $limit, offset: $offset}\n      smartContractEvent: {is: $event }\n      smartContractAddress: {is: $contract}\n      height: {gteq: $fromBlock, lt: $toBlock }\n    ) {\n      block {\n        height\n        timestamp {\n          iso8601\n          unixtime\n        }\n      }\n      transaction {\n        hash\n      }\n      arguments {\n        value\n        argument\n      }\n    }\n  }\n}\n",
+		"variables": {
+			"network": "%v",
+			"contract": "%v",
+			"event": "%v",
+			"fromBlock": %v,
+			"toBlock": %v,
+			"limit": %v,
+			"offset": %v
+		}
+	}`, NETWORK, CONTRACT_ADDRESS, EVENT, FROM_BLOCK, TO_BLOCK, PAGE_SIZE, page*PAGE_SIZE,
 	)
 
-	res, err := http.Get(url)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(body)))
+	if err != nil {
+		log.Fatalf("failed to create req")
+	}
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("X-API-KEY", apiKey)
+
+	client := &http.Client{}
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
-	result := &Response{}
+	result := &lib.BitqueryResponse{}
 	err = json.NewDecoder(res.Body).Decode(&result)
 	if err != nil {
 		return nil, err
 	}
 
-	if result.Error {
-		return nil, errors.New(result.ErrorMessage)
+	if len(result.Errors) > 0 {
+		return nil, errors.New(result.Errors[0].Message)
 	}
 
-	return result.Data.Items, nil
+	return result.Data.Events, nil
 }
 
-// Fetches and saves to db OpenSea trade events from Covalent API.
 func main() {
 	// load .env into ENV
 	err := godotenv.Overload()
@@ -65,15 +72,24 @@ func main() {
 
 	// init params
 	if len(os.Args) != 2 {
-		log.Fatal("wrong arguments. pass [from_block]")
+		log.Fatal("wrong arguments. pass [page]")
 	}
 
-	fromBlockParam := os.Args[1]
-	fromBlock, err := strconv.ParseInt(fromBlockParam, 10, 64)
+	pageParam := os.Args[1]
+	page, err := strconv.ParseInt(pageParam, 10, 64)
 	if err != nil {
-		log.Fatalf("invalid from_block param '%v': %v", fromBlockParam, err)
+		log.Fatalf("invalid page param '%v': %v", pageParam, err)
 	}
-	log.Printf("fetching trades from [%v]...", fromBlock)
+	log.Printf(`fetching events from bitquery:
+- network: %v
+- contract: %v
+- event: %v
+- fromBlock: %v
+- toBlock: %v
+- limit: %v
+- offset: %v`,
+		NETWORK, CONTRACT_ADDRESS, EVENT, FROM_BLOCK, TO_BLOCK, PAGE_SIZE, page*PAGE_SIZE,
+	)
 
 	// connect db
 	db, err := lib.CreateDB()
@@ -82,24 +98,37 @@ func main() {
 	}
 	defer db.Close()
 
-	// fetch and save trades in a loop
+	// network
+	var network int64
+	switch NETWORK {
+	case "ethereum":
+		network = 1
+	case "matic":
+		network = 137
+	}
+
 	for {
-		trades, err := fetchTrades(fromBlock)
+		// fetch
+		events, err := fetchEvents(page)
 		if err != nil {
-			log.Fatalf("failed to fetch trades from block %v: %v", fromBlock, err)
+			log.Fatalf("failed to fetch events for page %v: %v", page, err)
 		}
-		if len(trades) == 0 {
-			log.Printf("fetch success with no trades")
+		if len(events) == 0 {
+			log.Printf("fetch success with no events")
 			break
 		}
 
-		err = db.SaveOpenseaTrades(trades)
+		// save to db
+		err = db.SaveOpenseaTrades(network, events)
 		if err != nil {
-			log.Fatalf("failed to save trades to db: %v", err)
+			log.Fatalf("failed to save events to db: %v", err)
 		}
 
-		log.Printf("[%v -> %v] fetched and saved %v trades", trades[0].BlockHeight, trades[len(trades)-1].BlockHeight, len(trades))
-		fromBlock = trades[len(trades)-1].BlockHeight
+		log.Printf("[%v - %v] fetched and saved %v events: [%v -> %v]",
+			page*PAGE_SIZE+1, (page+1)*PAGE_SIZE, len(events),
+			events[0].BlockData.Block, events[len(events)-1].BlockData.Block,
+		)
+		page++
 	}
 
 	os.Exit(0)

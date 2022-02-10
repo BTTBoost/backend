@@ -121,18 +121,18 @@ func (db *DB) GetDailyTokenHolders(network int, token string, fromTime int64) (m
 	return m, nil
 }
 
-func (db *DB) SaveOpenseaTrades(events []CovalentEvent) error {
+func (db *DB) SaveOpenseaTrades(network int64, events []BitqueryEvent) error {
 	batch := &pgx.Batch{}
 
 	for _, e := range events {
-		t, err := OpenseaEventToTrade(e)
+		t, err := ParseOpenseaTradeBitqueryEvent(e)
 		if err != nil {
 			return err
 		}
 
 		batch.Queue(
-			"INSERT INTO opensea_trades(block, time, tx, maker, taker, price) VALUES ($1, $2, $3, $4, $5, $6)",
-			t.block, t.time, t.tx, t.maker, t.taker, t.price,
+			"INSERT INTO opensea_trades(network, block, time, tx, buy_hash, sell_hash, maker, taker, price) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+			network, t.block, t.time, t.tx, t.buyHash, t.sellHash, t.maker, t.taker, t.price,
 		)
 	}
 
