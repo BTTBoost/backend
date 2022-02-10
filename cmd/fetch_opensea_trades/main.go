@@ -116,7 +116,7 @@ func main() {
 			if err == nil {
 				break
 			}
-			log.Fatalf("failed to fetch events for page %v: %v", page, err)
+			log.Printf("failed to fetch events for page %v: %v", page, err)
 		}
 
 		if len(events) == 0 {
