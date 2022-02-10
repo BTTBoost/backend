@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -117,6 +118,7 @@ func main() {
 				break
 			}
 			log.Printf("failed to fetch events for page %v: %v", page, err)
+			time.Sleep(10 * time.Second)
 		}
 
 		if len(events) == 0 {
