@@ -109,10 +109,16 @@ func main() {
 
 	for {
 		// fetch
-		events, err := fetchEvents(page)
-		if err != nil {
+		var events []lib.BitqueryEvent
+		var err error
+		for {
+			events, err = fetchEvents(page)
+			if err == nil {
+				break
+			}
 			log.Fatalf("failed to fetch events for page %v: %v", page, err)
 		}
+
 		if len(events) == 0 {
 			log.Printf("fetch success with no events")
 			break
