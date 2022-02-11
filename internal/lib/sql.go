@@ -45,13 +45,19 @@ func EventQuery(event string, network int64, from int64, days int64) string {
 	)
 }
 
-// TODO: currently ignores takers (!)
 func LooksRareTradesQuery(network int64, from int64, days int64) string {
 	to := from + days*86400
 	return fmt.Sprintf(
-		"SELECT time_day as time, maker as user "+
+		"SELECT time_day as time, user "+
+			"FROM ("+
+			"SELECT time, maker as user "+
 			"FROM analytics.looksrare_trades "+
-			"WHERE network = %v AND time >= %v AND time < %v "+
+			"WHERE network = %[1]v AND time >= %[2]v AND time < %[3]v "+
+			"UNION ALL "+
+			"SELECT time, taker as user "+
+			"FROM analytics.looksrare_trades "+
+			"WHERE network = %[1]v AND time >= %[2]v AND time < %[3]v "+
+			") "+
 			"ORDER BY toUnixTimestamp(toStartOfDay(toDate(time))) as time_day",
 		network, from, to,
 	)
