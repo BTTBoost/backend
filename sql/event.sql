@@ -58,3 +58,24 @@ FROM (
 ) E ON H.time = E.time AND H.holder = E.user 
 GROUP BY H.time 
 ORDER BY H.time WITH FILL FROM 1636156800 TO 1643932800 STEP 86400;
+
+SELECT H.time, COUNT(*) 
+FROM (
+  SELECT time, holder 
+  FROM analytics.token_holders 
+  WHERE network = 1 AND token = '0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d' AND time >= 1636156800 AND time < 1643932800 AND amount >= 1
+) H 
+INNER JOIN (
+  SELECT toUnixTimestamp(toStartOfDay(toDate(time))) as time, user 
+  FROM (
+    SELECT time, taker as user 
+    FROM analytics.opensea_trades 
+    WHERE network = 1 AND time >= 1636156800 AND time < 1643932800 
+    UNION ALL 
+    SELECT time, maker as user 
+    FROM analytics.opensea_trades 
+    WHERE network = 1 AND time >= 1636156800 AND time < 1643932800
+  )
+) E ON H.time = E.time AND H.holder = E.user 
+GROUP BY H.time 
+ORDER BY H.time WITH FILL FROM 1636156800 TO 1643932800 STEP 86400;

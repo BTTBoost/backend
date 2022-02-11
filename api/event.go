@@ -58,6 +58,8 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 	case "looksrare_trade_ethereum":
 		// TODO: currently ignores takers (!)
 		eventQuery = lib.LooksRareTradesQuery(1, from, days)
+	case "opensea_trade_ethereum":
+		eventQuery = lib.OpenseaTradesEthereumQuery(from, days)
 	default:
 		lib.WriteErrorResponse(w, http.StatusBadRequest, "invalid event")
 		return

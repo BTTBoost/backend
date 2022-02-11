@@ -6,7 +6,7 @@ import (
 )
 
 func TokenHoldersQuery(network int, token string, from int64, days int64, amount *big.Int) string {
-	to := 1636156800 + days*86400
+	to := from + days*86400
 	return fmt.Sprintf("SELECT time, holder "+
 		"FROM analytics.token_holders "+
 		"WHERE network = %v AND token = '%v' AND time >= %v AND time < %v AND amount >= %v",
@@ -24,7 +24,7 @@ func JoinHolderQueries(query0 string, query1 string) string {
 }
 
 func GroupHolderQuery(query string, from int64, days int64) string {
-	to := 1636156800 + days*86400
+	to := from + days*86400
 	return fmt.Sprintf(
 		"SELECT time, COUNT(*) "+
 			"FROM (%v) "+
@@ -35,7 +35,7 @@ func GroupHolderQuery(query string, from int64, days int64) string {
 }
 
 func EventQuery(event string, network int64, from int64, days int64) string {
-	to := 1636156800 + days*86400
+	to := from + days*86400
 	return fmt.Sprintf(
 		"SELECT time_day as time, user, amount "+
 			"FROM analytics.%v "+
@@ -47,7 +47,7 @@ func EventQuery(event string, network int64, from int64, days int64) string {
 
 // TODO: currently ignores takers (!)
 func LooksRareTradesQuery(network int64, from int64, days int64) string {
-	to := 1636156800 + days*86400
+	to := from + days*86400
 	return fmt.Sprintf(
 		"SELECT time_day as time, maker as user "+
 			"FROM analytics.looksrare_trades "+
@@ -57,8 +57,26 @@ func LooksRareTradesQuery(network int64, from int64, days int64) string {
 	)
 }
 
+func OpenseaTradesEthereumQuery(from int64, days int64) string {
+	to := from + days*86400
+	return fmt.Sprintf(
+		"SELECT time_day as time, user "+
+			"FROM ("+
+			"SELECT time, taker as user "+
+			"FROM analytics.opensea_trades "+
+			"WHERE network = 1 AND time >= %[1]v AND time < %[2]v "+
+			"UNION ALL "+
+			"SELECT time, maker as user "+
+			"FROM analytics.opensea_trades "+
+			"WHERE network = 1 AND time >= %[1]v AND time < %[2]v "+
+			")"+
+			"ORDER BY toUnixTimestamp(toStartOfDay(toDate(time))) as time_day",
+		from, to,
+	)
+}
+
 func HolderDailyEventsQuery(holdersQuery string, eventQuery string, from int64, days int64) string {
-	to := 1636156800 + days*86400
+	to := from + days*86400
 	return fmt.Sprintf(
 		"SELECT H.time, COUNT(*) "+
 			"FROM (%v) H "+
