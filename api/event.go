@@ -42,10 +42,10 @@ func EventHandler(w http.ResponseWriter, r *http.Request) {
 	event := r.URL.Query().Get("event")
 
 	// generate sql query
-	holdersQuery := lib.TokenHoldersQuery(int(networks[0]), tokens[0], from, days, amounts[0])
+	holdersQuery := lib.TokenHoldersDaysQuery(int(networks[0]), tokens[0], from, days, amounts[0])
 	for i := 1; i < len(tokens); i++ {
-		qi := lib.TokenHoldersQuery(int(networks[i]), tokens[i], from, days, amounts[i])
-		holdersQuery = lib.JoinHolderQueries(holdersQuery, qi)
+		qi := lib.TokenHoldersDaysQuery(int(networks[i]), tokens[i], from, days, amounts[i])
+		holdersQuery = lib.JoinHolderDaysQueries(holdersQuery, qi)
 	}
 
 	// event query

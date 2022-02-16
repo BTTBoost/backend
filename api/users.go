@@ -47,12 +47,12 @@ func UsersHandler(w http.ResponseWriter, r *http.Request) {
 	var from int64 = 1636156800
 
 	// generate sql query
-	query := lib.TokenHoldersQuery(int(networks[0]), tokens[0], from, days, amounts[0])
+	query := lib.TokenHoldersDaysQuery(int(networks[0]), tokens[0], from, days, amounts[0])
 	for i := 1; i < len(tokens); i++ {
-		qi := lib.TokenHoldersQuery(int(networks[i]), tokens[i], from, days, amounts[i])
-		query = lib.JoinHolderQueries(query, qi)
+		qi := lib.TokenHoldersDaysQuery(int(networks[i]), tokens[i], from, days, amounts[i])
+		query = lib.JoinHolderDaysQueries(query, qi)
 	}
-	query = lib.GroupHolderQuery(query, from, days)
+	query = lib.GroupHolderDaysQuery(query, from, days)
 
 	// query Clickhouse over HTTP
 	result, err := lib.QueryClickhouse(query)

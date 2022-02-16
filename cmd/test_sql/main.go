@@ -39,21 +39,11 @@ func main() {
 	amounts := []*big.Int{big.NewInt(10), big.NewInt(1)}
 
 	// generate sql query
-	query := lib.TokenHoldersQuery(1, tokens[0], from, days, amounts[0])
+	query := lib.TokenHoldersDaysQuery(1, tokens[0], from, days, amounts[0])
 	for i := 1; i < len(tokens); i++ {
-		qi := lib.TokenHoldersQuery(1, tokens[i], from, days, amounts[i])
-		query = lib.JoinHolderQueries(query, qi)
+		qi := lib.TokenHoldersDaysQuery(1, tokens[i], from, days, amounts[i])
+		query = lib.JoinHolderDaysQueries(query, qi)
 	}
-	query = lib.GroupHolderQuery(query, from, days)
+	query = lib.GroupHolderDaysQuery(query, from, days)
 	log.Printf("query: %v", query)
-
-	// var from int64 = 1636156800
-	// var days int64 = 90
-	// holdersQuery := lib.TokenHoldersQuery(1, "0x5a98fcbea516cf06857215779fd812ca3bef1b32", from, days, big.NewInt(1))
-	// eventsQuery := lib.EventQuery("aave_deposits", from, days)
-	// holderDailyEventsQuery := lib.HolderDailyEventsQuery(holdersQuery, eventsQuery, from, days)
-
-	// log.Printf("holders query: %v", holdersQuery)
-	// log.Printf("events query: %v", eventsQuery)
-	// log.Printf("holder daily events query: %v", holderDailyEventsQuery)
 }

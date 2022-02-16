@@ -5,7 +5,7 @@ import (
 	"math/big"
 )
 
-func TokenHoldersQuery(network int, token string, from int64, days int64, amount *big.Int) string {
+func TokenHoldersDaysQuery(network int, token string, from int64, days int64, amount *big.Int) string {
 	to := from + days*86400
 	return fmt.Sprintf("SELECT time, holder "+
 		"FROM analytics.token_holders "+
@@ -14,7 +14,7 @@ func TokenHoldersQuery(network int, token string, from int64, days int64, amount
 	)
 }
 
-func JoinHolderQueries(query0 string, query1 string) string {
+func JoinHolderDaysQueries(query0 string, query1 string) string {
 	return fmt.Sprintf("SELECT T1.time, T1.holder "+
 		"FROM (%v) T1 "+
 		"INNER JOIN (%v) T2 "+
@@ -23,7 +23,7 @@ func JoinHolderQueries(query0 string, query1 string) string {
 	)
 }
 
-func GroupHolderQuery(query string, from int64, days int64) string {
+func GroupHolderDaysQuery(query string, from int64, days int64) string {
 	to := from + days*86400
 	return fmt.Sprintf(
 		"SELECT time, COUNT(*) "+
