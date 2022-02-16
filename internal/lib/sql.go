@@ -93,3 +93,35 @@ func HolderDailyEventsQuery(holdersQuery string, eventQuery string, from int64, 
 		holdersQuery, eventQuery, from, to,
 	)
 }
+
+// Queries for cross-token queries at specific time
+
+func TokenHoldersQuery(network int, token string, time int64, amount *big.Int) string {
+	return fmt.Sprintf("SELECT holder "+
+		"FROM analytics.token_holders "+
+		"WHERE network = %v AND token = '%v' AND time = %v AND amount >= %v",
+		network, token, time, amount,
+	)
+}
+
+func JoinHolderQueries(query0 string, query1 string) string {
+	return fmt.Sprintf("SELECT T1.holder "+
+		"FROM (%v) T1 "+
+		"INNER JOIN (%v) T2 "+
+		"ON (T1.holder = T2.holder)",
+		query0, query1,
+	)
+}
+
+func TopHoldingTokensQuery(holdersQuery string, time int64) string {
+	return fmt.Sprintf("SELECT T2.network as network, T2.token as token, holders, "+
+		"  holders * 100 / (SELECT COUNT(*) FROM (%[1]v)) as \"holders_share\""+ // can be optimized with over
+		"FROM (%[1]v) T1 "+
+		"INNER JOIN ("+
+		"  SELECT * FROM analytics.token_holders WHERE time = %[2]v"+
+		") T2 ON T1.holder = T2.holder "+
+		"GROUP BY T2.network, T2.token "+
+		"ORDER BY COUNT(*) as holders DESC",
+		holdersQuery, time,
+	)
+}
