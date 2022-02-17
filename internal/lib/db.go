@@ -90,6 +90,27 @@ func (db *DB) SaveCovalentTokenHolders(network int, token string, time int64, ho
 	return nil
 }
 
+func (db *DB) SaveLastTokenHolders(network int, token string, holders []CovalentHolder) error {
+	batch := &pgx.Batch{}
+
+	batch.Queue("DELETE FROM token_holders_last WHERE network = $1 AND token = $2", network, token)
+
+	for _, x := range holders {
+		batch.Queue(
+			"INSERT INTO token_holders_last(network, token, holder, amount) VALUES ($1, $2, $3, $4)",
+			network, token, x.Address, x.Balance,
+		)
+	}
+
+	br := db.conn.SendBatch(context.Background(), batch)
+	err := br.Close()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (db *DB) GetDailyTokenHolders(network int, token string, fromTime int64) (map[int64]map[string]string, error) {
 	m := make(map[int64]map[string]string)
 
