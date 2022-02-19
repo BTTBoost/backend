@@ -8,3 +8,7 @@ services:
     build: 
       context: .
       dockerfile: ./cmd/fetch_opensea_trades/Dockerfile
+  fetch_token_holders:
+    build: 
+        context: .
+        dockerfile: ./cmd/fetch_token_holders/Dockerfile
