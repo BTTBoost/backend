@@ -1,0 +1,10 @@
+version: '3'
+services:
+  fetch_blocks:
+    build: 
+      context: .
+      dockerfile: ./cmd/fetch_blocks/Dockerfile
+  fetch_opensea_trades:
+    build: 
+      context: .
+      dockerfile: ./cmd/fetch_opensea_trades/Dockerfile
