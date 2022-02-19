@@ -4,6 +4,7 @@ import (
 	"awake/internal/lib"
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,6 +14,8 @@ import (
 
 	"github.com/joho/godotenv"
 )
+
+const PAGE_SIZE = 1000000
 
 type Response struct {
 	Data         ResponseData `json:"data"`
@@ -26,15 +29,14 @@ type ResponseData struct {
 }
 
 // TODO: move to lib
-// TODO: support pagination
-func fetchHolders(network int, token string, block int64) ([]lib.CovalentHolder, error) {
+// TODO: pagination is probably broken on server
+func fetchHolders(network int, token string, block int64, pageSize int, page int) ([]lib.CovalentHolder, error) {
 	apiKey := os.Getenv("COVALENT_API_KEY")
-	pageSize := 100000
 
 	url := fmt.Sprintf(
 		"https://api.covalenthq.com/v1/%v/tokens/%v/token_holders/"+
-			"?block-height=%v&page-number=0&page-size=%v&key=%v",
-		network, token, block, pageSize, apiKey,
+			"?block-height=%v&page-number=%v&page-size=%v&key=%v",
+		network, token, block, page, pageSize, apiKey,
 	)
 
 	res, err := http.Get(url)
@@ -46,7 +48,11 @@ func fetchHolders(network int, token string, block int64) ([]lib.CovalentHolder,
 	if err != nil {
 		return nil, err
 	}
+	if result.Error {
+		return nil, errors.New(result.ErrorMessage)
+	}
 
+	// TODO: uncomment once server pagination is fixed
 	if len(result.Data.Items) == pageSize {
 		return nil, fmt.Errorf("too many holders, pagination required")
 	}
@@ -54,7 +60,6 @@ func fetchHolders(network int, token string, block int64) ([]lib.CovalentHolder,
 	return result.Data.Items, nil
 }
 
-// TODO: support pagination for tokens with > 100k holders
 // Fetches and saves to db holders of all tokens at some time from Covalent API.
 func main() {
 	network := 1
@@ -117,13 +122,25 @@ func main() {
 	for i, token := range tokens {
 		// fetch
 		var holders []lib.CovalentHolder
+		page := 0
 		for {
-			holders, err = fetchHolders(network, token, block)
-			if err == nil {
+			// fetch page with repeat on error
+			var pageHolders []lib.CovalentHolder
+			for {
+				pageHolders, err = fetchHolders(network, token, block, PAGE_SIZE, page)
+				if err == nil {
+					log.Printf("[%v|%v|%v] fetched %v holders", i, token, page, len(pageHolders))
+					break
+				}
+				log.Printf("[%v|%v|%v] failed to fetch holders for token: %v", i, token, page, err)
+				time.Sleep(5 * time.Second)
+			}
+
+			holders = append(holders, pageHolders...)
+			if len(pageHolders) < PAGE_SIZE {
 				break
 			}
-			log.Printf("[%v|%v] failed to fetch holders for token: %v", i, token, err)
-			time.Sleep(5 * time.Second)
+			page++
 		}
 
 		// save to db
@@ -131,7 +148,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("[%v|%v] failed to save token holders: %v", i, token, err)
 		}
-		log.Printf("[%v|%v] fetched and saved %v holders", i, token, len(holders))
+		log.Printf("[%v|%v] saved %v holders", i, token, len(holders))
 	}
 
 	os.Exit(0)
