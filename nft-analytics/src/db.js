@@ -1,6 +1,23 @@
 import pg from 'pg'
 import format from 'pg-format'
 
+
+export const readHoldersWithoutBalance = async function (network, token) {
+  const client = new pg.Client({
+    connectionString: process.env.DB_CONN_STRING,
+    ssl: { rejectUnauthorized: false },
+  })
+  await client.connect()
+
+  const res = await client.query(format(
+    'SELECT holder FROM token_holders_last WHERE network = %L AND token = %L AND holder NOT IN (SELECT address FROM balance_updated) ORDER BY holder',
+    network, token,
+  ))
+
+  await client.end()
+  return res.rows
+}
+
 export const saveHolders = async function (network, token, holders) {
   const client = new pg.Client({
     connectionString: process.env.DB_CONN_STRING,
@@ -41,6 +58,12 @@ export const saveBalances = async function (network, address, balances) {
     await client.query('BEGIN')
 
     await client.query(format('DELETE FROM balances WHERE network = %L AND address = %L', network, address))
+
+    const updatedAt = Date.now()
+    await client.query(format(
+      'INSERT INTO balance_updated (network, address, updated_at) VALUES (%L) ON CONFLICT (network, address) DO UPDATE SET updated_at = %L',
+      [network, address, updatedAt], updatedAt,
+    ))
 
     const query = 'INSERT INTO balances (network, address, token, amount, amount_usd) VALUES %L'
     const values = balances.map(b => [network, address, b.contract_address, b.balance, b.quote])
