@@ -32,13 +32,13 @@ async function saveHolders(network, token, holders) {
     await client.query('BEGIN')
 
     await client.query(format('DELETE FROM token_holders_last WHERE network = %L AND token = %L', network, token))    
-    const query = 'INSERT INTO token_holders_last (network, token, holder, amount) VALUES %L'
     
+    const query = 'INSERT INTO token_holders_last (network, token, holder, amount) VALUES %L'
     const values = holders.map(h => [network, token, h.address, h.balance])
     const res = await client.query(format(query, values))
-    count = res.rowCount
 
     await client.query('COMMIT')
+    count = res.rowCount
   } catch (e) {
     console.error("Save error:", e)
     await client.query('ROLLBACK')
@@ -56,12 +56,10 @@ async function main() {
   return fetchHolders(network, token)
     .then(holders => {
       console.log(`Fetched ${holders.length} holders`)
-      return holders
+      return saveHolders(network, token, holders)
     })
-    .catch(error => console.error(`Failed to fetch holders: ${error}`))
-    .then(holders => saveHolders(network, token, holders))
     .then(count => console.log(`Saved ${count} holders to db`))
-    .catch(error => console.error(`Failed to save holders: ${error}`))
+    .catch(error => console.error(`Failed to update holders: ${error}`))
 }
 
 main()
