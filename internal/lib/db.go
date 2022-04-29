@@ -271,3 +271,30 @@ func (db *DB) GetAllNFTs() ([]NFTCollection, error) {
 
 	return nfts, nil
 }
+
+func (db *DB) GetNFTTokenHoldings(network int, token string, limit int) ([]HoldingRow, error) {
+	holdings := []HoldingRow{}
+
+	rows, err := db.conn.Query(context.Background(),
+		"SELECT holding_token, holders, holders_share FROM token_holdings WHERE network = $1 AND token = $2 ORDER BY holders DESC LIMIT $3",
+		network, token, limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var htoken string
+	var holders int64
+	var share float64
+	for rows.Next() {
+		rows.Scan(&htoken, &holders, &share)
+		t := Token{Network: 1, Address: htoken}
+		holdings = append(holdings, HoldingRow{Token: t, Holders: holders, Share: share})
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	return holdings, nil
+}
