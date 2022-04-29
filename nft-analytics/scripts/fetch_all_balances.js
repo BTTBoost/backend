@@ -7,23 +7,25 @@ async function main() {
   const network = parseInt(process.argv[2])
   const token = process.argv[3]
 
-  try {
-    const holders = await readHoldersWithoutBalance(network, token)
+  var i = 0
+  do {
+    var holders = await readHoldersWithoutBalance(network, token)
     console.log(`Found ${holders.length} holders without balances...`)
 
-    var i = 0
-    for (const h of holders) {
-      try {
-        const balances = await fetchBalances(network, h.holder)
-        await saveBalances(network, h.holder, balances)
-        console.log(`[${i++}|${h.holder}] update ${balances.length} balances`)
-      } catch (e) {
-        console.log(`[${i++}|${h.holder}] failed to update balances`)
-      }
+    var requests = []
+    for (const h of holders.slice(0, 50)) {
+      const r = fetchBalances(network, h.holder)
+        .catch(e => {
+          console.log(`[${i++}|${h.holder}] failed to fetch balances: ${e}`)
+          throw e
+        })
+        .then(balances => saveBalances(network, h.holder, balances))
+        .then(count => console.log(`[${i++}|${h.holder}] updated ${count} balances`))
+        .catch(e => console.log(`[${i++}|${h.holder}] failed to update balances: ${e}`))
+      requests.push(r)
     }
-  } catch (e) {
-    throw e
-  }
+    await Promise.all(requests)
+  } while (holders.length > 0)
 }
 
 main()

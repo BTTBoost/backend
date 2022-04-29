@@ -19,12 +19,17 @@ export const fetchHolders = async function (network, token) {
 
 export const fetchBalances = async function (network, address) {
   const pageSize = 100000
+  const withNFTs = false // API endpoint not working with NFTs
   const url = `https://api.covalenthq.com/v1/${network}/address/${address}/balances_v2/?` +
-    `quote-currency=USD&format=JSON&nft=true&no-nft-fetch=false&key=${process.env.COVALENT_API_KEY}&page-number=0&page-size=${pageSize}`
+    `quote-currency=USD&format=JSON&nft=${withNFTs}&no-nft-fetch=false&key=${process.env.COVALENT_API_KEY}&page-number=0&page-size=${pageSize}`
   return fetch(url)
     .then(response => response.json())
     .then(body => {
       if (body.error || !body.data) {
+        // handle 'Endpoint will predictably time out ...'
+        if (body.error_code == 406) {
+          return []
+        }
         throw new Error(body.error_message)
       }
       if (body.data.items.length >= pageSize) {

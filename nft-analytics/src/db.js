@@ -65,17 +65,21 @@ export const saveBalances = async function (network, address, balances) {
       [network, address, updatedAt], updatedAt,
     ))
 
-    const query = 'INSERT INTO balances (network, address, token, amount, amount_usd) VALUES %L'
-    const values = balances.map(b => [network, address, b.contract_address, b.balance, b.quote])
-    const res = await client.query(format(query, values))
+    if (balances.length > 0) {
+      const query = 'INSERT INTO balances (network, address, token, amount, amount_usd) VALUES %L'
+      const values = balances.map(b => [network, address, b.contract_address, b.balance, b.quote])
+      const res = await client.query(format(query, values))
+      count = res.rowCount
+    }
 
     await client.query('COMMIT')
-    count = res.rowCount
   } catch (e) {
     console.error("Save error:", e)
     await client.query('ROLLBACK')
+    throw e
+  } finally {
+    await client.end()
   }
 
-  await client.end()
   return count
 }
