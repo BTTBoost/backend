@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func NftsHandler(w http.ResponseWriter, r *http.Request) {
+func NFTAllHandler(w http.ResponseWriter, r *http.Request) {
 	// connect db
 	db, err := lib.CreateDB()
 	if err != nil {

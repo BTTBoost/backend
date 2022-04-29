@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func NFTHoldingTokensHandler(w http.ResponseWriter, r *http.Request) {
+func NFTHoldingsHandler(w http.ResponseWriter, r *http.Request) {
 	// token arg
 	token := r.URL.Query().Get("token")
 	if !lib.IsValidAddress(token) {
