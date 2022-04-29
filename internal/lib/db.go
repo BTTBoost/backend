@@ -213,3 +213,29 @@ func (db *DB) SaveLooksRareTrades(network int64, events []BitqueryEvent) error {
 
 	return nil
 }
+
+func (db *DB) GetAllNFTs() ([]NFTCollection, error) {
+	nfts := []NFTCollection{}
+
+	rows, err := db.conn.Query(context.Background(),
+		"SELECT address, name, symbol, logo FROM tokens ORDER BY id",
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var address string
+	var name string
+	var symbol string
+	var logo string
+	for rows.Next() {
+		rows.Scan(&address, &name, &symbol, &logo)
+		nfts = append(nfts, NFTCollection{Address: address, Name: name, Symbol: symbol, Logo: logo})
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	return nfts, nil
+}

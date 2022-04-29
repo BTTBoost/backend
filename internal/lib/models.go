@@ -20,3 +20,10 @@ type CovalentHolder struct {
 	Address string `json:"address"`
 	Balance string `json:"balance"`
 }
+
+type NFTCollection struct {
+	Address string `json:"address"`
+	Name    string `json:"name"`
+	Symbol  string `json:"symbol"`
+	Logo    string `json:"logo"`
+}
