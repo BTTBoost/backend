@@ -2,7 +2,9 @@ package lib
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -109,6 +111,36 @@ func (db *DB) SaveLastTokenHolders(network int, token string, holders []Covalent
 	}
 
 	return nil
+}
+
+func (db *DB) GetLastTokenHolders(network int, token string) ([]NFTHolder, error) {
+	holders := []NFTHolder{}
+
+	rows, err := db.conn.Query(context.Background(),
+		"SELECT holder, amount FROM token_holders_last WHERE network = $1 AND token = $2",
+		network, token,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var holder string
+	var amountStr string
+	for rows.Next() {
+		rows.Scan(&holder, &amountStr)
+
+		var amount, err = strconv.Atoi(amountStr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse amount: %v", err)
+		}
+		holders = append(holders, NFTHolder{Address: holder, Amount: int64(amount)})
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	return holders, nil
 }
 
 func (db *DB) GetDailyTokenHolders(network int, token string, fromTime int64) (map[int64]map[string]string, error) {

@@ -27,3 +27,8 @@ type NFTCollection struct {
 	Symbol  string `json:"symbol"`
 	Logo    string `json:"logo"`
 }
+
+type NFTHolder struct {
+	Address string `json:"address"`
+	Amount  int64  `json:"amount"`
+}
