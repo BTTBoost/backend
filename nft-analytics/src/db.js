@@ -1,7 +1,7 @@
 import pg from 'pg'
 import format from 'pg-format'
 
-
+// TODO: rename to replace
 export const readHoldersWithoutBalance = async function (network, token) {
   const client = new pg.Client({
     connectionString: process.env.DB_CONN_STRING,
@@ -18,6 +18,7 @@ export const readHoldersWithoutBalance = async function (network, token) {
   return res.rows
 }
 
+// TODO: rename to replace
 export const saveHolders = async function (network, token, holders) {
   const client = new pg.Client({
     connectionString: process.env.DB_CONN_STRING,
@@ -46,6 +47,7 @@ export const saveHolders = async function (network, token, holders) {
   return count
 }
 
+// TODO: rename to replace
 export const saveBalances = async function (network, address, balances) {
   const client = new pg.Client({
     connectionString: process.env.DB_CONN_STRING,
@@ -82,4 +84,20 @@ export const saveBalances = async function (network, address, balances) {
   }
 
   return count
+}
+
+export const appendTokens = async function (tokens) {
+  const client = new pg.Client({
+    connectionString: process.env.DB_CONN_STRING,
+    ssl: { rejectUnauthorized: false },
+  })
+  await client.connect()
+
+  const query = 'INSERT INTO tokens (network, address, name, symbol, logo) VALUES %L ON CONFLICT (network, address) DO NOTHING'
+  const values = tokens.map(t => [t.network, t.address, t.name, t.symbol, t.logo])
+  const resp = await client.query(format(query, values))
+
+  await client.end()
+
+  return resp.rowCount
 }
