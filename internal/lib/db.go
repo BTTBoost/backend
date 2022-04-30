@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/jackc/pgx/pgtype"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -292,7 +293,14 @@ func (db *DB) GetNFTTokenHoldings(network int, token string, limit int) ([]Holdi
 	holdings := []HoldingRow{}
 
 	rows, err := db.conn.Query(context.Background(),
-		"SELECT holding_token, holders, holders_share FROM token_holdings WHERE network = $1 AND token = $2 ORDER BY holders DESC LIMIT $3",
+		`SELECT T1.holding_token as token_address, T2.name as token_name, T2.symbol as token_symbol, T2.decimals as token_decimals, T2.logo as token_logo, T1.holders, T1.holders_share 
+		FROM token_holdings T1
+		LEFT JOIN (
+			SELECT * FROM tokens
+		) T2 on T1.holding_token = T2.address
+		WHERE T1.network = $1 AND T1.token = $2 
+		ORDER BY holders 
+		DESC LIMIT $3`,
 		network, token, limit,
 	)
 	if err != nil {
@@ -300,12 +308,23 @@ func (db *DB) GetNFTTokenHoldings(network int, token string, limit int) ([]Holdi
 	}
 	defer rows.Close()
 
-	var htoken string
+	var tokenAddress string
+	var tokenName pgtype.Text
+	var tokenSymbol pgtype.Text
+	var tokenDecimals pgtype.Int8
+	var tokenLogo pgtype.Text
 	var holders int64
 	var share float64
 	for rows.Next() {
-		rows.Scan(&htoken, &holders, &share)
-		t := Token{Network: 1, Address: htoken}
+		rows.Scan(&tokenAddress, &tokenName, &tokenSymbol, &tokenDecimals, &tokenLogo, &holders, &share)
+		t := Token{
+			Network:  1,
+			Address:  tokenAddress,
+			Name:     tokenName.String,
+			Symbol:   tokenSymbol.String,
+			Logo:     tokenLogo.String,
+			Decimals: tokenDecimals.Int,
+		}
 		holdings = append(holdings, HoldingRow{Token: t, Holders: holders, Share: share})
 	}
 	if rows.Err() != nil {

@@ -12,8 +12,12 @@ type HoldingRow struct {
 }
 
 type Token struct {
-	Network int64  `json:"network"`
-	Address string `json:"address"`
+	Network  int64  `json:"network"`
+	Address  string `json:"address"`
+	Name     string `json:"name,omitempty"`
+	Symbol   string `json:"symbol,omitempty"`
+	Logo     string `json:"logo,omitempty"`
+	Decimals int64  `json:"decimals,omitempty"`
 }
 
 type CovalentHolder struct {
