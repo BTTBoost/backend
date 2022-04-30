@@ -74,7 +74,14 @@ export const saveBalances = async function (network, address, balances) {
       count = res.rowCount
 
       const tokenQuery = 'INSERT INTO tokens (network, address, name, symbol, logo, decimals) VALUES %L ON CONFLICT (network, address) DO NOTHING'
-      const tokenValues = balances.map(b => [network, b.contract_address, b.contract_name, b.contract_ticker_symbol, b.logo_url, b.contract_decimals])
+      const tokenValues = balances.map(b => [
+        network,
+        b.contract_address,
+        b.contract_name ? b.contract_name.replaceAll(String.fromCharCode(0), '') : null,
+        b.contract_ticker_symbol ? b.contract_ticker_symbol.replaceAll(String.fromCharCode(0), '') : null,
+        b.logo_url ? b.logo_url.replaceAll(String.fromCharCode(0), '') : null,
+        b.contract_decimals
+      ])
       await client.query(format(tokenQuery, tokenValues))
     }
 
