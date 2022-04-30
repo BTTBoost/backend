@@ -18,7 +18,7 @@ func NFTHoldersHandler(w http.ResponseWriter, r *http.Request) {
 	// connect db
 	db, err := lib.CreateDB()
 	if err != nil {
-		lib.WriteErrorResponse(w, http.StatusBadRequest, "internal error")
+		lib.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	defer db.Close()
@@ -26,7 +26,7 @@ func NFTHoldersHandler(w http.ResponseWriter, r *http.Request) {
 	// get holders from db
 	holders, err := db.GetLastTokenHolders(1, token)
 	if err != nil {
-		lib.WriteErrorResponse(w, http.StatusBadRequest, "internal error")
+		lib.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 

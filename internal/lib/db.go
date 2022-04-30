@@ -117,7 +117,22 @@ func (db *DB) GetLastTokenHolders(network int, token string) ([]NFTHolder, error
 	holders := []NFTHolder{}
 
 	rows, err := db.conn.Query(context.Background(),
-		"SELECT holder, amount FROM token_holders_last WHERE network = $1 AND token = $2",
+		`SELECT T0.holder, T0.amount, 
+			CASE
+				WHEN T3.total_balance_usd IS NULL THEN 0.0
+				ELSE T3.total_balance_usd
+			END as total_balance_usd
+		FROM token_holders_last T0
+		LEFT JOIN (
+			SELECT T1.holder, SUM(T2.amount_usd) as total_balance_usd
+			FROM token_holders_last T1
+			LEFT JOIN (
+				SELECT * FROM balances
+			) T2 on T1.holder = T2.address
+			WHERE T1.network = $1 AND T1.token = $2 
+			GROUP BY T1.holder
+		) T3 on T0.holder = T3.holder
+		WHERE T0.network = $1 AND T0.token = $2`,
 		network, token,
 	)
 	if err != nil {
@@ -127,14 +142,15 @@ func (db *DB) GetLastTokenHolders(network int, token string) ([]NFTHolder, error
 
 	var holder string
 	var amountStr string
+	var balance float64
 	for rows.Next() {
-		rows.Scan(&holder, &amountStr)
+		rows.Scan(&holder, &amountStr, &balance)
 
 		var amount, err = strconv.Atoi(amountStr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse amount: %v", err)
 		}
-		holders = append(holders, NFTHolder{Address: holder, Amount: int64(amount)})
+		holders = append(holders, NFTHolder{Address: holder, Amount: int64(amount), TotalBalanceUsd: balance})
 	}
 	if rows.Err() != nil {
 		return nil, rows.Err()
