@@ -17,7 +17,7 @@ func NFTAllHandler(w http.ResponseWriter, r *http.Request) {
 
 	nfts, err := db.GetAllNFTs()
 	if err != nil {
-		lib.WriteErrorResponse(w, http.StatusBadRequest, "internal error")
+		lib.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 

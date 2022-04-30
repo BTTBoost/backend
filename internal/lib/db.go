@@ -266,8 +266,16 @@ func (db *DB) SaveLooksRareTrades(network int64, events []BitqueryEvent) error {
 func (db *DB) GetAllNFTs() ([]NFTCollection, error) {
 	nfts := []NFTCollection{}
 
+	tokens := []string{
+		"0x026224a2940bfe258d0dbe947919b62fe321f042",
+		"0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d",
+		"0x1A92f7381B9F03921564a437210bB9396471050C",
+		"0x938e5ed128458139a9c3306ace87c60bcba9c067",
+		"0x23581767a106ae21c074b2276D25e5C3e136a68b",
+	}
 	rows, err := db.conn.Query(context.Background(),
-		"SELECT address, name, symbol, logo FROM tokens ORDER BY id",
+		"SELECT address, name, symbol, logo FROM tokens WHERE address = ANY ($1) ORDER BY id",
+		tokens,
 	)
 	if err != nil {
 		return nil, err
@@ -275,12 +283,12 @@ func (db *DB) GetAllNFTs() ([]NFTCollection, error) {
 	defer rows.Close()
 
 	var address string
-	var name string
-	var symbol string
-	var logo string
+	var name pgtype.Text
+	var symbol pgtype.Text
+	var logo pgtype.Text
 	for rows.Next() {
 		rows.Scan(&address, &name, &symbol, &logo)
-		nfts = append(nfts, NFTCollection{Address: address, Name: name, Symbol: symbol, Logo: logo})
+		nfts = append(nfts, NFTCollection{Address: address, Name: name.String, Symbol: symbol.String, Logo: logo.String})
 	}
 	if rows.Err() != nil {
 		return nil, rows.Err()
