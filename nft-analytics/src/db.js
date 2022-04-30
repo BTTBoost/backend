@@ -68,10 +68,14 @@ export const saveBalances = async function (network, address, balances) {
     ))
 
     if (balances.length > 0) {
-      const query = 'INSERT INTO balances (network, address, token, amount, amount_usd) VALUES %L'
-      const values = balances.map(b => [network, address, b.contract_address, b.balance, b.quote])
-      const res = await client.query(format(query, values))
+      const balanceQuery = 'INSERT INTO balances (network, address, token, amount, amount_usd) VALUES %L'
+      const balanceValues = balances.map(b => [network, address, b.contract_address, b.balance, b.quote])
+      const res = await client.query(format(balanceQuery, balanceValues))
       count = res.rowCount
+
+      const tokenQuery = 'INSERT INTO tokens (network, address, name, symbol, logo, decimals) VALUES %L ON CONFLICT (network, address) DO NOTHING'
+      const tokenValues = balances.map(b => [network, b.contract_address, b.contract_name, b.contract_ticker_symbol, b.logo_url, b.contract_decimals])
+      await client.query(format(tokenQuery, tokenValues))
     }
 
     await client.query('COMMIT')
@@ -100,4 +104,28 @@ export const appendTokens = async function (tokens) {
   await client.end()
 
   return resp.rowCount
+}
+
+export const saveMetadata = async function (network, token, metadata) {
+  const client = new pg.Client({
+    connectionString: process.env.DB_CONN_STRING,
+    ssl: { rejectUnauthorized: false },
+  })
+  await client.connect()
+
+  try {
+    await client.query('BEGIN')
+    await client.query(format('DELETE FROM tokens WHERE network = %L AND address = %L', network, token))
+
+    const query = 'INSERT INTO tokens (network, address, name, symbol, logo, decimals) VALUES (%L)'
+    const values = [network, token, metadata.name, metadata.symbol, metadata.logo, metadata.decimals ? metadata.decimals : 0]
+    await client.query(format(query, values))
+
+    await client.query('COMMIT')
+  } catch (e) {
+    console.error("Save error:", e)
+    await client.query('ROLLBACK')
+  }
+
+  await client.end()
 }

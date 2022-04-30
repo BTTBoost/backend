@@ -1,4 +1,5 @@
 import fetch from 'node-fetch'
+import { createAlchemyWeb3 } from "@alch/alchemy-web3"
 
 export const fetchHolders = async function (network, token) {
   const pageSize = 100000
@@ -37,4 +38,12 @@ export const fetchBalances = async function (network, address) {
       }
       return body.data.items
     })
+}
+
+// only on Ethereum mainnet now
+export const fetchTokenMetadata = async function (token) {
+  const web3 = createAlchemyWeb3(
+    `https://eth-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
+  )
+  return await web3.alchemy.getTokenMetadata(token)
 }
