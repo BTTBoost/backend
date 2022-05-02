@@ -1,7 +1,6 @@
 import pg from 'pg'
 import format from 'pg-format'
 
-// TODO: rename to replace
 export const readHoldersWithoutBalance = async function (network, token) {
   const client = new pg.Client({
     connectionString: process.env.DB_CONN_STRING,
@@ -11,6 +10,22 @@ export const readHoldersWithoutBalance = async function (network, token) {
 
   const res = await client.query(format(
     'SELECT holder FROM token_holders_last WHERE network = %L AND token = %L AND holder NOT IN (SELECT address FROM balance_updated) ORDER BY holder',
+    network, token,
+  ))
+
+  await client.end()
+  return res.rows
+}
+
+export const readHoldersTxsWithoutTxs = async function (network, token) {
+  const client = new pg.Client({
+    connectionString: process.env.DB_CONN_STRING,
+    ssl: { rejectUnauthorized: false },
+  })
+  await client.connect()
+
+  const res = await client.query(format(
+    'SELECT holder FROM token_holders_last WHERE network = %L AND token = %L AND holder NOT IN (SELECT address FROM txs_updated) ORDER BY holder',
     network, token,
   ))
 
@@ -135,4 +150,40 @@ export const saveMetadata = async function (network, token, metadata) {
   }
 
   await client.end()
+}
+
+export const saveTxs = async function (network, address, txs) {
+  const client = new pg.Client({
+    connectionString: process.env.DB_CONN_STRING,
+    ssl: { rejectUnauthorized: false },
+  })
+  await client.connect()
+
+  var count = 0
+  try {
+    await client.query('BEGIN')
+
+    const updatedAt = Date.now()
+    await client.query(format(
+      'INSERT INTO txs_updated (network, address, updated_at) VALUES (%L) ON CONFLICT (network, address) DO UPDATE SET updated_at = %L',
+      [network, address, updatedAt], updatedAt,
+    ))
+
+    if (txs.length > 0) {
+      const query = 'INSERT INTO txs (tx_hash, block, from_address, to_address, value, successful) VALUES %L ON CONFLICT DO NOTHING'
+      const values = txs.map(tx => [tx.tx_hash, tx.block_height, tx.from_address, tx.to_address, tx.value, tx.successful])
+      const res = await client.query(format(query, values))
+      count = res.rowCount
+    }
+
+    await client.query('COMMIT')
+  } catch (e) {
+    console.error("Save error:", e)
+    await client.query('ROLLBACK')
+    throw e
+  } finally {
+    await client.end()
+  }
+
+  return count
 }
