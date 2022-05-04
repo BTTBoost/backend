@@ -1,30 +1,33 @@
 require('dotenv').config()
+const fastq = require('fastq')
 const { fetchHolders } = require('../src/api.js')
 const { readNFTTokenlistWithoutHolders, saveHolders } = require('../src/db.js')
 
 const network = 1
-const parallelLimit = 50
+const concurrency = 25
 
 // fetch holders for all each nft token without holders
 async function main() {
   var i = 0
+  const worker = (address) => fetchHolders(network, address)
+    .catch(e => {
+      console.log(`[${i++}|${address}] failed to fetch holders: ${e}`)
+      throw e
+    })
+    .then(holders => saveHolders(network, address, holders))
+    .then(count => { console.log(`[${i}|${address}] ${count} holders saved`); i++ })
+    .catch(e => console.log(`[${i}|${address}] failed to update holders: ${e}`))
+
   do {
     var tokenlist = await readNFTTokenlistWithoutHolders()
     console.log(`Found ${tokenlist.length} tokens without holders...`)
 
-    var requests = []
-    for (const t of tokenlist.slice(0, parallelLimit)) {
-      const r = fetchHolders(network, t.address)
-        .catch(e => {
-          console.log(`[${i++}|${t.address}] failed to fetch holders: ${e}`)
-          throw e
-        })
-        .then(holders => saveHolders(network, t.address, holders))
-        .then(count => console.log(`[${i++}|${t.address}] ${count} holders saved`))
-        .catch(e => console.log(`[${i++}|${t.address}] failed to update holders: ${e}`))
-      requests.push(r)
+    const queue = fastq.promise(worker, concurrency)
+    for (const t of tokenlist) {
+      queue.push(t.address)
     }
-    await Promise.all(requests)
+
+    await queue.drain()
   } while (tokenlist.length > 0)
 }
 

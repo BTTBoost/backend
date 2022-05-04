@@ -10,8 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "@alch/alchemy-web3": "^1.4.2",
-    "async-functions-pool": "^1.0.1",
     "dotenv": "^16.0.0",
+    "fastq": "^1.13.0",
     "node-fetch": "^2.6.7",
     "pg": "^8.7.3",
     "pg-format": "^1.0.4"
