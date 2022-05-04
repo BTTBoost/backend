@@ -1,6 +1,7 @@
-import 'dotenv/config'
-import { fetchTokenMetadata } from '../src/api.js'
-import { readNFTTokenlistWithoutMetadata, saveMetadata } from '../src/db.js'
+require('dotenv').config()
+const { fetchTokenMetadata } = require('../src/api.js')
+const { readNFTTokenlistWithoutMetadata, saveMetadata } = require('../src/db.js')
+
 
 const parallelLimit = 50
 

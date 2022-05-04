@@ -1,6 +1,6 @@
-import 'dotenv/config'
-import { readFile } from 'fs/promises'
-import { appendTokens } from '../src/db.js'
+require('dotenv').config()
+const { readFile } = require('fs/promises')
+const { appendTokens } = require('../src/db.js')
 
 
 async function main() {

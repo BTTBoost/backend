@@ -1,6 +1,6 @@
-import 'dotenv/config'
-import { fetchTxs } from '../src/api.js'
-import { saveTxs } from '../src/db.js'
+require('dotenv').config()
+const { fetchTxs } = require('../src/api.js')
+const { saveTxs } = require('../src/db.js')
 
 async function main() {
   if (process.argv.length < 4) throw new Error('wrong arguments: pass network_id and address')

@@ -1,6 +1,6 @@
-import 'dotenv/config'
-import { fetchHolders } from '../src/api.js'
-import { readNFTTokenlistWithoutHolders, saveHolders } from '../src/db.js'
+require('dotenv').config()
+const { fetchHolders } = require('../src/api.js')
+const { readNFTTokenlistWithoutHolders, saveHolders } = require('../src/db.js')
 
 const network = 1
 const parallelLimit = 50

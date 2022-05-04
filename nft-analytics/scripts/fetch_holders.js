@@ -1,6 +1,6 @@
-import 'dotenv/config'
-import { fetchHolders } from '../src/api.js'
-import { saveHolders } from '../src/db.js'
+require('dotenv').config()
+const { fetchHolders } = require('../src/api.js')
+const { saveHolders } = require('../src/db.js')
 
 async function main() {
   if (process.argv.length < 4) throw new Error('wrong arguments: pass network_id and token_address')

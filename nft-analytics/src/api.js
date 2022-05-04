@@ -1,7 +1,7 @@
-import fetch from 'node-fetch'
-import { createAlchemyWeb3 } from "@alch/alchemy-web3"
+const fetch = require('node-fetch')
+const { createAlchemyWeb3 } = require('@alch/alchemy-web3')
 
-export const fetchHolders = async function (network, token) {
+exports.fetchHolders = async function (network, token) {
   const pageSize = 100000
   const url = `https://api.covalenthq.com/v1/${network}/tokens/${token}/token_holders/?` +
     `quote-currency=USD&format=JSON&key=${process.env.COVALENT_API_KEY}&page-number=0&page-size=${pageSize}`
@@ -18,7 +18,7 @@ export const fetchHolders = async function (network, token) {
     })
 }
 
-export const fetchBalances = async function (network, address) {
+exports.fetchBalances = async function (network, address) {
   const pageSize = 100000
   const withNFTs = false // API endpoint not working with NFTs
   const url = `https://api.covalenthq.com/v1/${network}/address/${address}/balances_v2/?` +
@@ -41,14 +41,14 @@ export const fetchBalances = async function (network, address) {
 }
 
 // only on Ethereum mainnet now
-export const fetchTokenMetadata = async function (token) {
+exports.fetchTokenMetadata = async function (token) {
   const web3 = createAlchemyWeb3(
     `https://eth-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
   )
   return await web3.alchemy.getTokenMetadata(token)
 }
 
-export const fetchTxs = async function (network, address) {
+exports.fetchTxs = async function (network, address) {
   const pageSize = 100000
   const url = `https://api.covalenthq.com/v1/${network}/address/${address}/transactions_v2/?` +
     `key=${process.env.COVALENT_API_KEY}&page-number=0&page-size=${pageSize}`
@@ -65,7 +65,7 @@ export const fetchTxs = async function (network, address) {
     })
 }
 
-export const fetchNFTMarket = async function (network) {
+exports.fetchNFTMarket = async function (network) {
   const pageSize = 100000
   const url = `https://api.covalenthq.com/v1/${network}/nft_market/?` +
     `key=${process.env.COVALENT_API_KEY}&page-number=0&page-size=${pageSize}`

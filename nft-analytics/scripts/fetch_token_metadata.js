@@ -1,6 +1,6 @@
-import 'dotenv/config'
-import { fetchTokenMetadata } from '../src/api.js'
-import { saveMetadata } from '../src/db.js'
+require('dotenv').config()
+const { fetchTokenMetadata } = require('../src/api.js')
+const { saveMetadata } = require('../src/db.js')
 
 async function main() {
   if (process.argv.length < 4) throw new Error('wrong arguments: pass network_id and token_address')

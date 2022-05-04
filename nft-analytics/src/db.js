@@ -1,7 +1,7 @@
-import pg from 'pg'
-import format from 'pg-format'
+const pg = require('pg')
+const format = require('pg-format')
 
-export const readHoldersWithoutBalance = async function (network, token) {
+exports.readHoldersWithoutBalance = async function (network, token) {
   const client = new pg.Client({
     connectionString: process.env.DB_CONN_STRING,
     ssl: { rejectUnauthorized: false },
@@ -17,7 +17,7 @@ export const readHoldersWithoutBalance = async function (network, token) {
   return res.rows
 }
 
-export const readHoldersTxsWithoutTxs = async function (network, token) {
+exports.readHoldersTxsWithoutTxs = async function (network, token) {
   const client = new pg.Client({
     connectionString: process.env.DB_CONN_STRING,
     ssl: { rejectUnauthorized: false },
@@ -34,7 +34,7 @@ export const readHoldersTxsWithoutTxs = async function (network, token) {
 }
 
 // TODO: rename to replace
-export const saveHolders = async function (network, token, holders) {
+exports.saveHolders = async function (network, token, holders) {
   const client = new pg.Client({
     connectionString: process.env.DB_CONN_STRING,
     ssl: { rejectUnauthorized: false },
@@ -63,7 +63,7 @@ export const saveHolders = async function (network, token, holders) {
 }
 
 // TODO: rename to replace
-export const saveBalances = async function (network, address, balances) {
+exports.saveBalances = async function (network, address, balances) {
   const client = new pg.Client({
     connectionString: process.env.DB_CONN_STRING,
     ssl: { rejectUnauthorized: false },
@@ -112,7 +112,7 @@ export const saveBalances = async function (network, address, balances) {
   return count
 }
 
-export const appendTokens = async function (tokens) {
+exports.appendTokens = async function (tokens) {
   const client = new pg.Client({
     connectionString: process.env.DB_CONN_STRING,
     ssl: { rejectUnauthorized: false },
@@ -128,7 +128,7 @@ export const appendTokens = async function (tokens) {
   return resp.rowCount
 }
 
-export const saveMetadata = async function (network, token, metadata) {
+exports.saveMetadata = async function (network, token, metadata) {
   const client = new pg.Client({
     connectionString: process.env.DB_CONN_STRING,
     ssl: { rejectUnauthorized: false },
@@ -152,7 +152,7 @@ export const saveMetadata = async function (network, token, metadata) {
   await client.end()
 }
 
-export const saveTxs = async function (network, address, txs) {
+exports.saveTxs = async function (network, address, txs) {
   const client = new pg.Client({
     connectionString: process.env.DB_CONN_STRING,
     ssl: { rejectUnauthorized: false },
@@ -188,7 +188,7 @@ export const saveTxs = async function (network, address, txs) {
   return count
 }
 
-export const saveNFTTokenlist = async function (tokenlist) {
+exports.saveNFTTokenlist = async function (tokenlist) {
   const client = new pg.Client({
     connectionString: process.env.DB_CONN_STRING,
     ssl: { rejectUnauthorized: false },
@@ -218,7 +218,7 @@ export const saveNFTTokenlist = async function (tokenlist) {
   return count
 }
 
-export const readNFTTokenlistWithoutMetadata = async function (network, token) {
+exports.readNFTTokenlistWithoutMetadata = async function (network, token) {
   const client = new pg.Client({
     connectionString: process.env.DB_CONN_STRING,
     ssl: { rejectUnauthorized: false },
@@ -231,7 +231,7 @@ export const readNFTTokenlistWithoutMetadata = async function (network, token) {
   return res.rows
 }
 
-export const readNFTTokenlistWithoutHolders = async function (network, token) {
+exports.readNFTTokenlistWithoutHolders = async function (network, token) {
   const client = new pg.Client({
     connectionString: process.env.DB_CONN_STRING,
     ssl: { rejectUnauthorized: false },

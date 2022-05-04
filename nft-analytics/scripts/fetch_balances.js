@@ -1,6 +1,6 @@
-import 'dotenv/config'
-import { fetchBalances } from '../src/api.js'
-import { saveBalances } from '../src/db.js'
+require('dotenv').config()
+const { fetchBalances } = require('../src/api.js')
+const { saveBalances } = require('../src/db.js')
 
 async function main() {
   if (process.argv.length < 4) throw new Error('wrong arguments: pass network_id and address')

@@ -1,6 +1,6 @@
-import 'dotenv/config'
-import { fetchTxs } from '../src/api.js'
-import { readHoldersTxsWithoutTxs, saveTxs } from '../src/db.js'
+require('dotenv').config()
+const { fetchTxs } = require('../src/api.js')
+const { readHoldersTxsWithoutTxs, saveTxs } = require('../src/db.js')
 
 const parallelLimit = 50
 

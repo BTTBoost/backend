@@ -1,6 +1,6 @@
-import 'dotenv/config'
-import { fetchNFTMarket } from '../src/api.js'
-import { saveNFTTokenlist } from '../src/db.js'
+require('dotenv').config()
+const { fetchNFTMarket } = require('../src/api.js')
+const { saveNFTTokenlist } = require('../src/db.js')
 
 async function main() {
   return fetchNFTMarket(1)
