@@ -297,18 +297,27 @@ func (db *DB) GetAllNFTs() ([]NFTCollection, error) {
 	return nfts, nil
 }
 
-func (db *DB) GetNFTTokenHoldings(network int, token string, limit int) ([]HoldingRow, error) {
+func (db *DB) GetNFTTokenHoldings(network int, token string, nft bool, limit int) ([]HoldingRow, error) {
 	holdings := []HoldingRow{}
 
+	var tableName string
+	if nft {
+		tableName = "nft_holdings"
+	} else {
+		tableName = "token_holdings"
+	}
 	rows, err := db.conn.Query(context.Background(),
-		`SELECT T1.holding_token as token_address, T2.name as token_name, T2.symbol as token_symbol, T2.decimals as token_decimals, T2.logo as token_logo, T1.holders, T1.holders_share 
-		FROM token_holdings T1
+		fmt.Sprintf(
+			`SELECT T1.holding_token as token_address, T2.name as token_name, T2.symbol as token_symbol, T2.decimals as token_decimals, T2.logo as token_logo, T1.holders, T1.holders_share 
+		FROM %s T1
 		LEFT JOIN (
 			SELECT * FROM tokens
 		) T2 on T1.holding_token = T2.address
 		WHERE T1.network = $1 AND T1.token = $2 
 		ORDER BY holders 
 		DESC LIMIT $3`,
+			tableName,
+		),
 		network, token, limit,
 	)
 	if err != nil {
