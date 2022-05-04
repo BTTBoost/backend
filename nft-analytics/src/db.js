@@ -230,3 +230,16 @@ export const readNFTTokenlistWithoutMetadata = async function (network, token) {
   await client.end()
   return res.rows
 }
+
+export const readNFTTokenlistWithoutHolders = async function (network, token) {
+  const client = new pg.Client({
+    connectionString: process.env.DB_CONN_STRING,
+    ssl: { rejectUnauthorized: false },
+  })
+  await client.connect()
+
+  const res = await client.query('SELECT address FROM nft_tokenlist WHERE address NOT IN (SELECT DISTINCT token FROM token_holders_last)')
+
+  await client.end()
+  return res.rows
+}
