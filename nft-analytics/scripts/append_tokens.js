@@ -4,7 +4,7 @@ import { appendTokens } from '../src/db.js'
 
 
 async function main() {
-  const nfts = JSON.parse(await readFile(new URL('../tokenlist_nfts.json', import.meta.url)));
+  const nfts = JSON.parse(await readFile(new URL('../tokenlist_app_nfts.json', import.meta.url)));
 
   await appendTokens(nfts)
     .then(count => console.log(`Appended ${count} nfts to db`))

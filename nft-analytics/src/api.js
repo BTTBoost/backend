@@ -64,3 +64,20 @@ export const fetchTxs = async function (network, address) {
       return body.data.items
     })
 }
+
+export const fetchNFTMarket = async function (network) {
+  const pageSize = 100000
+  const url = `https://api.covalenthq.com/v1/${network}/nft_market/?` +
+    `key=${process.env.COVALENT_API_KEY}&page-number=0&page-size=${pageSize}`
+  return fetch(url)
+    .then(response => response.json())
+    .then(body => {
+      if (body.error || !body.data) {
+        throw new Error(body.error_message)
+      }
+      if (body.data.items.length >= pageSize) {
+        throw new Error('too many items')
+      }
+      return body.data.items
+    })
+}

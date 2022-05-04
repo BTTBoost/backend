@@ -187,3 +187,33 @@ export const saveTxs = async function (network, address, txs) {
 
   return count
 }
+
+export const saveNFTTokenlist = async function (tokenlist) {
+  const client = new pg.Client({
+    connectionString: process.env.DB_CONN_STRING,
+    ssl: { rejectUnauthorized: false },
+  })
+  await client.connect()
+
+  var count = 0
+  try {
+    await client.query('BEGIN')
+
+    await client.query('DELETE FROM nft_tokenlist')
+
+    const query = 'INSERT INTO nft_tokenlist (address) VALUES %L'
+    const values = tokenlist.map(t => [t.collection_address])
+    const res = await client.query(format(query, values))
+    count = res.rowCount
+
+    await client.query('COMMIT')
+  } catch (e) {
+    console.error("Save error:", e)
+    await client.query('ROLLBACK')
+    throw e
+  } finally {
+    await client.end()
+  }
+
+  return count
+}
