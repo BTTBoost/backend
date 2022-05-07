@@ -37,3 +37,10 @@ type NFTHolder struct {
 	Amount          int64   `json:"amount"`
 	TotalBalanceUsd float64 `json:"total_balance_usd"`
 }
+
+type NFTStats struct {
+	Active1d  int64 `json:"active_1d"`
+	Active7d  int64 `json:"active_7d"`
+	Active30d int64 `json:"active_30d"`
+	Total     int64 `json:"total"`
+}

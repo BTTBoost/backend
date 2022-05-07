@@ -350,3 +350,32 @@ func (db *DB) GetNFTTokenHoldings(network int, token string, nft bool, limit int
 
 	return holdings, nil
 }
+
+func (db *DB) GetNFTStats(token string) (*NFTStats, error) {
+	rows, err := db.conn.Query(context.Background(), `
+		SELECT SUM(ha.day::int) as day, SUM(ha.week::int) as week, SUM(ha.month::int) as month, COUNT(th.holder) as total 
+ 		FROM token_holders_last th
+			INNER JOIN holders_activity ha ON th.holder = ha.holder
+		WHERE th.token = $1`,
+		token,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var day int64
+	var week int64
+	var month int64
+	var total int64
+	var stats *NFTStats
+	for rows.Next() {
+		rows.Scan(&day, &week, &month, &total)
+		stats = &NFTStats{Active1d: day, Active7d: week, Active30d: month, Total: total}
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	return stats, nil
+}
