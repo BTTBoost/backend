@@ -2,6 +2,7 @@ package lib
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -297,6 +298,35 @@ func (db *DB) GetAllNFTs() ([]NFTCollection, error) {
 	return nfts, nil
 }
 
+func (db *DB) GetToken(network int64, token string) (*Token, error) {
+	rows, err := db.conn.Query(context.Background(),
+		"SELECT name, symbol, logo FROM tokens WHERE network = $1 AND address = $2",
+		network, token,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		var name pgtype.Text
+		var symbol pgtype.Text
+		var logo pgtype.Text
+		rows.Scan(&name, &symbol, &logo)
+		if rows.Err() != nil {
+			return nil, rows.Err()
+		}
+
+		token := &Token{
+			Network: network, Address: token,
+			Name: name.String, Symbol: symbol.String, Logo: logo.String,
+		}
+		return token, nil
+	} else {
+		return nil, errors.New("no rows")
+	}
+}
+
 func (db *DB) GetNFTTokenHoldings(network int, token string, nft bool, limit int) ([]HoldingRow, error) {
 	holdings := []HoldingRow{}
 
@@ -364,18 +394,20 @@ func (db *DB) GetNFTStats(token string) (*NFTStats, error) {
 	}
 	defer rows.Close()
 
-	var day int64
-	var week int64
-	var month int64
-	var total int64
-	var stats *NFTStats
-	for rows.Next() {
+	if rows.Next() {
+		var stats *NFTStats
+		var day pgtype.Int8
+		var week pgtype.Int8
+		var month pgtype.Int8
+		var total pgtype.Int8
 		rows.Scan(&day, &week, &month, &total)
-		stats = &NFTStats{Active1d: day, Active7d: week, Active30d: month, Total: total}
-	}
-	if rows.Err() != nil {
-		return nil, rows.Err()
-	}
+		if rows.Err() != nil {
+			return nil, rows.Err()
+		}
 
-	return stats, nil
+		stats = &NFTStats{Active1d: day.Int, Active7d: week.Int, Active30d: month.Int, Total: total.Int}
+		return stats, nil
+	} else {
+		return nil, errors.New("no rows")
+	}
 }

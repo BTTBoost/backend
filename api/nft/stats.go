@@ -24,9 +24,16 @@ func NFTStatsHandler(w http.ResponseWriter, r *http.Request) {
 
 	stats, err := db.GetNFTStats(token)
 	if err != nil {
-		lib.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+		lib.WriteErrorResponse(w, http.StatusBadRequest, "internal error")
 		return
 	}
+
+	t, err := db.GetToken(1, token)
+	if err != nil {
+		lib.WriteErrorResponse(w, http.StatusBadRequest, "internal error")
+		return
+	}
+	stats.Token = *t
 
 	// write response
 	w.Header().Set("Content-Type", "application/json")

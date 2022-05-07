@@ -39,6 +39,7 @@ type NFTHolder struct {
 }
 
 type NFTStats struct {
+	Token     Token `json:"token"`
 	Active1d  int64 `json:"active_1d"`
 	Active7d  int64 `json:"active_7d"`
 	Active30d int64 `json:"active_30d"`
