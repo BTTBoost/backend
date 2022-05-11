@@ -429,6 +429,54 @@ func (db *DB) GetNFTProtocols(network int, token string, limit int) ([]ProtocolU
 	return list, nil
 }
 
+func (db *DB) GetNFTNetworks(network int, token string, limit int) ([]NetworkUsage, error) {
+	list := []NetworkUsage{}
+
+	rows, err := db.conn.Query(context.Background(), `
+			SELECT n.name         as networkName,
+				n.logo              as networkLogo,
+				n.url               as networkUrl,
+				nu.users_last_month as usersLastMonth,
+				nu.users_in_total   as usersInTotal
+			FROM networks_usage nu
+							 JOIN networks n ON n.id = nu.network_id
+			WHERE nu.nft_id = (
+					SELECT id
+					FROM tokens
+					WHERE network = $1 AND address = $2 
+			)
+			ORDER BY nu.users_last_month DESC,
+         			 nu.users_in_total DESC
+		  LIMIT $3
+		`, network, token, limit)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var networkName pgtype.Text
+	var networkLogo pgtype.Text
+	var networkUrl pgtype.Text
+	var usersLastMonth int64
+	var usersInTotal int64
+	for rows.Next() {
+		rows.Scan(&networkName, &networkLogo, &networkUrl, &usersLastMonth, &usersInTotal)
+		list = append(list, NetworkUsage{
+			Name:           networkName.String,
+			Logo:           networkLogo.String,
+			Url:            networkLogo.String,
+			UsersLastMonth: usersLastMonth,
+			UsersInTotal:   usersInTotal,
+		})
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	return list, nil
+}
+
 func (db *DB) GetNFTStats(token string) (*NFTStats, error) {
 	rows, err := db.conn.Query(context.Background(), `
 		SELECT SUM(ha.day::int) as day, SUM(ha.week::int) as week, SUM(ha.month::int) as month, COUNT(th.holder) as total 

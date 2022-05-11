@@ -28,6 +28,14 @@ type ProtocolUsage struct {
 	UsersInTotal   int64  `json:"users_in_total"`
 }
 
+type NetworkUsage struct {
+	Name           string `json:"name"`
+	Logo           string `json:"logo,omitempty"`
+	Url            string `json:"url,omitempty"`
+	UsersLastMonth int64  `json:"users_last_month"`
+	UsersInTotal   int64  `json:"users_in_total"`
+}
+
 type CovalentHolder struct {
 	Address string `json:"address"`
 	Balance string `json:"balance"`
