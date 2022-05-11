@@ -381,6 +381,54 @@ func (db *DB) GetNFTTokenHoldings(network int, token string, nft bool, limit int
 	return holdings, nil
 }
 
+func (db *DB) GetNFTProtocols(network int, token string, limit int) ([]ProtocolUsage, error) {
+	list := []ProtocolUsage{}
+
+	rows, err := db.conn.Query(context.Background(), `
+			SELECT p.name as protocolName,
+						 p.logo as protocolLogo,
+						 p.url as protocolUrl,
+						 pu.users_last_month as usersLastMonth,
+						 pu.users_in_total as usersInTotal
+			FROM protocols_usage pu
+							 JOIN protocols p ON p.id = pu.protocol_id
+			WHERE pu.nft_id = (
+					SELECT id
+					FROM tokens
+					WHERE network = $1 AND address = $2 
+			)
+			ORDER BY pu.users_last_month DESC,
+         			 pu.users_in_total DESC
+		  LIMIT $3
+		`, network, token, limit)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var protocolName pgtype.Text
+	var protocolLogo pgtype.Text
+	var protocolUrl pgtype.Text
+	var usersLastMonth int64
+	var usersInTotal int64
+	for rows.Next() {
+		rows.Scan(&protocolName, &protocolLogo, &protocolUrl, &usersLastMonth, &usersInTotal)
+		list = append(list, ProtocolUsage{
+			Name:           protocolName.String,
+			Logo:           protocolLogo.String,
+			Url:            protocolLogo.String,
+			UsersLastMonth: usersLastMonth,
+			UsersInTotal:   usersInTotal,
+		})
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	return list, nil
+}
+
 func (db *DB) GetNFTStats(token string) (*NFTStats, error) {
 	rows, err := db.conn.Query(context.Background(), `
 		SELECT SUM(ha.day::int) as day, SUM(ha.week::int) as week, SUM(ha.month::int) as month, COUNT(th.holder) as total 
