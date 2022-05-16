@@ -26,11 +26,13 @@ class Storage {
 
   async dumpActivity(holdersActivityList) {
     const query = ([holder, day, week, month]) => `
-      INSERT INTO holders_activity
-      VALUES ('${holder}', ${day}, ${week}, ${month})
-      ON CONFLICT (holder) DO UPDATE
-      SET day = ${day}, week = ${week}, month = ${month};
-    `;
+        INSERT INTO holders_activity
+        VALUES ('${holder}', ${day}, ${week}, ${month})
+        ON CONFLICT (holder) DO UPDATE
+            SET day   = ${day},
+                week  = ${week},
+                month = ${month};
+    `
 
     return await this.client.query(holdersActivityList.map(query).join(''))
   }
@@ -40,6 +42,60 @@ class Storage {
 
     const query = 'INSERT INTO txs (tx_hash, block, from_address, to_address, value, successful) VALUES %L ON CONFLICT DO NOTHING'
     const values = list.map(t => [t.hash, t.block.height, t.from.address, t.to.address, t.value, t.successful])
+    const res = await this.client.query(format(query, values))
+    return res.rowCount
+  }
+
+  async dumpZapperTransactions(list) {
+    if (list.length <= 0) return
+
+    let fields = [
+      'network',
+      'hash',
+      'blockNumber',
+      'name',
+      'direction',
+      'timeStamp',
+      'symbol',
+      'address',
+      'amount',
+      'from',
+      'destination',
+      'contract',
+      'nonce',
+      'gasPrice',
+      'gasLimit',
+      'input',
+      'gas',
+      'txSuccessful',
+      'account',
+    ]
+    let fieldsOf = (o) => fields.map(f => o[f] ?? null)
+
+    const query = `
+        INSERT INTO zapper_transactions
+        (network,
+         hash,
+         block_number,
+         name,
+         direction,
+         time_stamp,
+         symbol,
+         address,
+         amount,
+         "from",
+         destination,
+         contract,
+         nonce,
+         gas_price,
+         gas_limit,
+         input,
+         gas,
+         tx_successful,
+         account)
+        VALUES
+        %L ON CONFLICT DO NOTHING`
+    const values = list.map(fieldsOf)
     const res = await this.client.query(format(query, values))
     return res.rowCount
   }
