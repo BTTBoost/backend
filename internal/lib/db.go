@@ -433,21 +433,32 @@ func (db *DB) GetNFTNetworks(network int, token string, limit int) ([]NetworkUsa
 	list := []NetworkUsage{}
 
 	rows, err := db.conn.Query(context.Background(), `
-			SELECT n.name         as networkName,
-				n.logo              as networkLogo,
-				n.url               as networkUrl,
-				nu.users_last_month as usersLastMonth,
-				nu.users_in_total   as usersInTotal
-			FROM networks_usage nu
-							 JOIN networks n ON n.id = nu.network_id
-			WHERE nu.nft_id = (
-					SELECT id
-					FROM tokens
-					WHERE network = $1 AND address = $2 
-			)
-			ORDER BY nu.users_last_month DESC,
-         			 nu.users_in_total DESC
-		  LIMIT $3
+    SELECT net.name                  as networkName,
+           net.logo                  as networkLogo,
+           net.url                   as networkUrl,
+           COALESCE(t.last_month, 0) as usersLastMonth,
+           COALESCE(t.in_total, 0)   as usersInTotal
+    FROM networks net
+             LEFT JOIN (
+        SELECT t.id,
+               SUM(t.last_month) as last_month,
+               SUM(t.in_total)   as in_total
+        FROM (
+                 SELECT net.id,
+                        hs.holder,
+                        bool_or((time_stamp::int > extract(epoch from now() - interval '30 DAYS')))::int as last_month,
+                        (COUNT(*) > 0)::int                                                              as in_total
+                 FROM networks as net
+                          JOIN token_holders_last hs
+                               ON hs.network = $1 AND hs.token = $2
+                          JOIN zapper_transactions zt ON net.zapper_network = zt.network AND zt.account = hs.holder
+                 GROUP BY net.id, hs.holder
+             ) as t
+        GROUP BY t.id
+    ) as t ON net.id = t.id
+    ORDER BY usersInTotal DESC,
+             usersLastMonth DESC
+    LIMIT $3;
 		`, network, token, limit)
 
 	if err != nil {
