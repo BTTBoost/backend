@@ -65,15 +65,16 @@ async function main() {
 
   await using(await storage.connect(), async () => {
     let holders = await storage.getHoldersOfTokens(1, nfts)
+    console.log({ holders: holders.length })
 
     let worker = createRetryableWorker(5 * 60 * 1000, 40,
       address => zapper.getTransactionsFor(address))
 
-    let cnt = 0
+    let cnt = 0, now = Date.now()
     for (let holder of holders) {
       cnt += 1
       let list = await worker(holder)
-      console.log(`txs: ${list?.length}, progress: ${cnt} / ${holders.length}`)
+      console.log(`txs: ${list?.length}, progress: ${cnt} / ${holders.length}, timeLeft: ${((Date.now() - now) / cnt * (holders.length - cnt) / 1000 / 60) | 0} minutes`)
       await storage.dumpZapperTransactions(list)
     }
   })
