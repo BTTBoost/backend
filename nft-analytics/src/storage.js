@@ -16,10 +16,10 @@ class Storage {
   }
 
   async getHoldersOfTokens(network, tokens) {
-    let filter = tokens.map(t => `lower(token) = '${t}'`).join(' OR ')
+    let filter = tokens.map(t => `token = '${t}'`).join(' OR ')
     let query = `SELECT DISTINCT holder
                  FROM token_holders_last
-                 WHERE ${filter}`
+                 WHERE network = ${network} AND ${filter}`
     let res = await this.client.query({ text: query, rowMode: 'array' })
     return res.rows.flat()
   }
