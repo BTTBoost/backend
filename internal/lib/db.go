@@ -456,6 +456,7 @@ func (db *DB) GetNFTNetworks(network int, token string, limit int) ([]NetworkUsa
              ) as t
         GROUP BY t.id
     ) as t ON net.id = t.id
+    WHERE t.last_month > 0 OR t.in_total > 0
     ORDER BY usersInTotal DESC,
              usersLastMonth DESC
     LIMIT $3;
