@@ -385,21 +385,38 @@ func (db *DB) GetNFTProtocols(network int, token string, limit int) ([]ProtocolU
 	list := []ProtocolUsage{}
 
 	rows, err := db.conn.Query(context.Background(), `
-			SELECT p.name as protocolName,
-						 p.logo as protocolLogo,
-						 p.url as protocolUrl,
-						 pu.users_last_month as usersLastMonth,
-						 pu.users_in_total as usersInTotal
-			FROM protocols_usage pu
-							 JOIN protocols p ON p.id = pu.protocol_id
-			WHERE pu.nft_id = (
-					SELECT id
-					FROM tokens
-					WHERE network = $1 AND address = $2 
-			)
-			ORDER BY pu.users_last_month DESC,
-         			 pu.users_in_total DESC
-		  LIMIT $3
+    SELECT p.name                    as protocolName,
+           p.logo                    as protocolLogo,
+           p.url                     as protocolUrl,
+           COALESCE(t.last_month, 0) as usersLastMonth,
+           COALESCE(t.in_total, 0)   as usersInTotal
+    FROM protocols p
+             JOIN (
+        SELECT s.id,
+               SUM(s.last_month) as last_month,
+               SUM(s.in_total)   as in_total
+        FROM (
+                 SELECT pc.id                                                                            as id,
+                        hs.holder,
+                        bool_or((time_stamp::int > extract(epoch from now() - interval '30 DAYS')))::int as last_month,
+                        (COUNT(*) > 0)::int                                                              as in_total
+                 FROM protocols_contracts pc
+                          JOIN token_holders_last hs
+                               ON hs.network = $1
+                                   AND hs.token = $2
+                          JOIN zapper_transactions zt
+                               ON zt.network = 'ethereum' AND
+                                  zt.account = hs.holder AND
+                                  zt.contract = pc.address
+                 GROUP BY pc.id, hs.holder
+             ) as s
+        GROUP BY s.id
+    ) as t ON p.id = t.id
+    WHERE t.in_total > 0
+       OR t.last_month > 0
+    ORDER BY usersInTotal DESC,
+             usersLastMonth DESC
+    LIMIT $3;
 		`, network, token, limit)
 
 	if err != nil {
