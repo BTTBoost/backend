@@ -99,6 +99,15 @@ class Storage {
     const res = await this.client.query(format(query, values))
     return res.rowCount
   }
+
+  async dumpZapperApps(list) {
+    if (list.length <= 0) return
+
+    const query = `INSERT INTO zapper_apps (id, name, url, description, address, network) VALUES %L ON CONFLICT DO NOTHING`
+    const values = list.map(t => [t.id, t.name, t.url, t.description, t.token?.address, t.token?.network])
+    const res = await this.client.query(format(query, values))
+    return res.rowCount
+  }
 }
 
 exports.Storage = Storage

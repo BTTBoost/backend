@@ -11,6 +11,10 @@ class ZapperClient {
     })
   }
 
+  async getApps() {
+    return await this.client.get('apps').json()
+  }
+
   async getTransactionsFor(address, network = undefined) {
     let response = await this.client.get({
       url: 'transactions',
