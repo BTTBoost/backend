@@ -434,7 +434,7 @@ func (db *DB) GetNFTProtocols(network int, token string, limit int) ([]ProtocolU
 		list = append(list, ProtocolUsage{
 			Name:           protocolName.String,
 			Logo:           protocolLogo.String,
-			Url:            protocolLogo.String,
+			Url:            protocolUrl.String,
 			UsersLastMonth: usersLastMonth,
 			UsersInTotal:   usersInTotal,
 		})
