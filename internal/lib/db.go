@@ -119,7 +119,8 @@ func (db *DB) GetLastTokenHolders(network int, token string) ([]NFTHolder, error
 	holders := []NFTHolder{}
 
 	rows, err := db.conn.Query(context.Background(),
-		`SELECT T0.holder, T0.amount, 
+		`SELECT T0.holder, T0.amount,
+		  COALESCE(T0.first_transfer, 0) as first_transfer,
 			CASE
 				WHEN T3.total_balance_usd IS NULL THEN 0.0
 				ELSE T3.total_balance_usd
@@ -145,14 +146,15 @@ func (db *DB) GetLastTokenHolders(network int, token string) ([]NFTHolder, error
 	var holder string
 	var amountStr string
 	var balance float64
+	var firstTransfer int64
 	for rows.Next() {
-		rows.Scan(&holder, &amountStr, &balance)
+		rows.Scan(&holder, &amountStr, &firstTransfer, &balance)
 
 		var amount, err = strconv.Atoi(amountStr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse amount: %v", err)
 		}
-		holders = append(holders, NFTHolder{Address: holder, Amount: int64(amount), TotalBalanceUsd: balance})
+		holders = append(holders, NFTHolder{Address: holder, Amount: int64(amount), FirstTransfer: firstTransfer, TotalBalanceUsd: balance})
 	}
 	if rows.Err() != nil {
 		return nil, rows.Err()

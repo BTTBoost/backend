@@ -51,6 +51,7 @@ type NFTCollection struct {
 type NFTHolder struct {
 	Address         string  `json:"address"`
 	Amount          int64   `json:"amount"`
+	FirstTransfer   int64   `json:"first_transfer"`
 	TotalBalanceUsd float64 `json:"total_balance_usd"`
 }
 
