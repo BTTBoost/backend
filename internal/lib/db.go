@@ -275,6 +275,8 @@ func (db *DB) GetAllNFTs() ([]NFTCollection, error) {
 		"0x1a92f7381b9f03921564a437210bb9396471050c",
 		"0x938e5ed128458139a9c3306ace87c60bcba9c067",
 		"0x23581767a106ae21c074b2276d25e5c3e136a68b",
+		"0x368ad4a7a7f49b8fa8f34476be0fc4d04ce622f5",
+		"0x98f4cd47b5e2db550077a7d5d33aea9e2088dd4c",
 	}
 	rows, err := db.conn.Query(context.Background(),
 		"SELECT address, name, symbol, logo FROM tokens WHERE address = ANY ($1) ORDER BY id",
